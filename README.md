@@ -115,6 +115,8 @@ En la base está el puesto de intercambio, que funciona por códigos (como el gu
 
 Límites honestos: el intercambio no es atómico (quien acepta podría no mandarte el cierre — el depósito y la cancelación cubren el caso honesto) y, como los saves son locales, la clonación no es prevenible. La garantía fuerte es de **legalidad**: nada que viole el contrato puede entrar a tu partida.
 
+**Tablón de la federación**: cada mundo puede publicar sus ofertas abiertas en `trades.json` (el puesto te da la entrada lista para agregar vía PR, con tu contacto para recibir el cierre). El CI valida cada oferta publicada con los mismos criterios estrictos del motor — el tablón público solo puede contener ofertas legales. Al explorar un mundo desde "Federación", el juego lee su tablón, re-valida cada oferta contra **tu** contrato (lo que tu mundo no reconoce aparece como no disponible) y te deja llevarla directo al puesto de intercambio.
+
 ## Federación de mundos
 
 Cada fork de este repo es un **mundo independiente**: su `GAME.md` define criaturas, zonas y balance propios, y el lint garantiza que sea un mundo válido. El token `federation` declara la identidad del mundo (`worldId`) y sus pares conocidos (`peers`).

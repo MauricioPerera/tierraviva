@@ -11,7 +11,7 @@ const genSrc = fs.readFileSync(path.join(root, "game-data.generated.js"), "utf8"
 
 const EXPORTS = "TYPES,EFF,STATUS,MOVES,SPECIES,DESCS,ART,TRAINERS,SHOP,TILES,BIOMES,MATERIALS,RECIPES," +
   "EXPEDITIONS,BUILDINGS,STORAGE,SFX,MUSIC,BREED,PLAYER,FED,BAL,ZONES,WILD,EVO,BASE,STARTERS,MOUNT_KEYS," +
-  "S,mk,startWild,startTrainer,gainXp,fedCompat";
+  "S,mk,startWild,startTrainer,gainXp,fedCompat,tradeCheck,boardEntry,enc,dec";
 
 function boot(withGenerated = true) {
   const fakeEl = () => ({ innerHTML: "", value: "", textContent: "", appendChild() {}, select() {} });

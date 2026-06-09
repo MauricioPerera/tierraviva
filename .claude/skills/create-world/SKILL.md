@@ -46,6 +46,8 @@ Un mundo = un fork de este repo con su `GAME.md` propio, publicado en GitHub Pag
 
 6. **Federate**: verificá desde el juego (botón "Federación" → pegá tu URL → el cliente valida tu contrato en el navegador). Después abrí un PR al mundo original (u otros) agregando tu mundo a sus `peers` — y listá los suyos en el tuyo.
 
+7. **(Opcional) Tablón de intercambios**: tu mundo trae `trades.json` vacío. Los jugadores publican ofertas ahí vía PR (el puesto de intercambio les da la entrada JSON lista); `node tools/trades-lint.js` corre en tu CI y rechaza ofertas ilegales o de otros mundos. Retirá las ofertas cerradas con otro PR.
+
 ## Checklist de aceptación
 
 - [ ] `worldId` propio y lint sin errores

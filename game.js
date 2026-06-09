@@ -356,7 +356,9 @@ if(t){
 body=`<p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 6px">Tu criatura en depósito (pedís: ${t.wants.length?t.wants.join(", "):"cualquier especie"}):</p>
 ${ficha(t.c)}
 <p style="font-size:13px;color:var(--color-text-secondary);margin:8px 0 4px">Pasale este código de oferta a la otra persona:</p>
-<input readonly value="${offerCode()}" onclick="this.select()" style="width:100%;font-size:11px;margin-bottom:10px"/>
+<input readonly value="${offerCode()}" onclick="this.select()" style="width:100%;font-size:11px;margin-bottom:6px"/>
+<p style="font-size:12px;color:var(--color-text-tertiary);margin:0 0 4px">¿Querés publicarla en el tablón de tu mundo? Agregá esta entrada a <b>trades.json</b> vía PR (poné tu contacto para recibir el cierre):</p>
+<input readonly value="${esc(JSON.stringify({code:offerCode(),contact:"tu-contacto-acá"}))}" onclick="this.select()" style="width:100%;font-size:11px;margin-bottom:10px"/>
 <p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 4px">Cuando te responda, pegá su código de cierre:</p>
 <div class="row" style="margin-bottom:10px"><input id="trclose" placeholder="Código de cierre" style="flex:1"/><button onclick="trClose()">Cerrar intercambio</button></div>
 <button onclick="trCancel()"><i class="ti ti-arrow-back-up" aria-hidden="true"></i> Cancelar oferta (recuperar criatura)</button>`}
@@ -452,6 +454,12 @@ ${f?`<div class="card" style="margin-bottom:10px">
 <p style="font-size:13px;margin:0 0 8px">Tu equipo allá: ${f.compat.have.length?`✓ ${f.compat.have.join(", ")}`:""}${f.compat.missing.length?` <span style="color:#E24B4A">✗ ${f.compat.missing.join(", ")} (no existen en ese mundo: se descartan al cargar)</span>`:""}${!f.compat.have.length&&!f.compat.missing.length?"sin criaturas aún":""}</p>
 <button onclick="fedTravel()" ${f.lintErrors>0?"disabled":""}><i class="ti ti-plane-departure" aria-hidden="true"></i> Viajar con tu equipo</button>
 ${f.lintErrors>0?`<p style="font-size:12px;color:var(--color-text-tertiary);margin:6px 0 0">No se recomienda viajar a un mundo con contrato inválido.</p>`:""}
+${f.board===null?"":f.board.length===0?`<p style="font-size:13px;color:var(--color-text-tertiary);margin:10px 0 0"><i class="ti ti-clipboard-list" aria-hidden="true"></i> Tablón de intercambios: sin ofertas.</p>`:`
+<p style="font-size:13px;font-weight:500;margin:10px 0 6px"><i class="ti ti-clipboard-list" aria-hidden="true"></i> Tablón de intercambios (${f.board.length}):</p>
+${f.board.map((o,i)=>o.err?`<p style="font-size:12px;color:var(--color-text-tertiary);margin:0 0 6px">· Oferta de ${esc(o.name||"?")} no disponible en tu mundo: ${esc(o.err)}.</p>`:`
+<div class="card" style="margin-bottom:8px">${ficha(o.d.c)}
+<p style="font-size:13px;margin:0 0 6px">Pide: <b>${o.d.wants.length?o.d.wants.join(", "):"cualquier especie"}</b>${o.contact?` · cierre por: ${esc(o.contact)}`:""}</p>
+<button onclick="boardTake(${i})"><i class="ti ti-arrows-exchange" aria-hidden="true"></i> Llevar al puesto de intercambio</button></div>`).join("")}`}
 </div>`:""}
 <button onclick="closeFed()"><i class="ti ti-arrow-left" aria-hidden="true"></i> Volver al mapa</button></div>`))}
 window.openFed=()=>{S.screen="fed";S.fedInfo=null;S.fedErr=null;S.fedBusy=false;render()};
@@ -469,9 +477,27 @@ const d=window.YamlMin.parseYamlSubset(fm);
 const errs=window.GameLint.lintGame(d).filter(x=>x.level==="error").length;
 S.fedInfo={url:u,name:d.name||"(sin nombre)",worldId:(d.federation||{}).worldId||"?",version:d.version??"?",
 species:Object.keys(d.species||{}).length,zones:Object.keys(d.zones||{}).length,trainers:Object.keys(d.trainers||{}).length,
-lintErrors:errs,compat:fedCompat(d.species)};
-S.fedBusy=false;render()})
+lintErrors:errs,compat:fedCompat(d.species),board:null};
+S.fedBusy=false;render();
+// el tablón de intercambios es opcional: si no existe, no es error
+return fetch(u+"trades.json").then(r=>r.ok?r.json():null).then(tr=>{
+if(!tr||!Array.isArray(tr.offers)||!S.fedInfo||S.fedInfo.url!==u)return;
+S.fedInfo.board=tr.offers.slice(0,50).map(en=>boardEntry(en));render()}).catch(()=>{})})
 .catch(e=>{S.fedErr="No se pudo leer ese mundo: "+e.message;S.fedBusy=false;render()})};
+/* Decodifica y valida una entrada del tablón remoto CONTRA MI contrato:
+   solo es aceptable acá lo que mi mundo reconoce. */
+function boardEntry(en){
+try{const d=dec(en.code);
+if(!d||d.k!=="offer"||typeof d.id!=="string")return{err:"entrada malformada"};
+const err=tradeCheck(d.c);
+if(err)return{err,name:String(d.c&&d.c.name||"?")};
+d.wants=(Array.isArray(d.wants)?d.wants.filter(n=>SPECIES[n]):[]).slice(0,3);
+return{d,contact:typeof en.contact==="string"?en.contact.slice(0,200):""}}
+catch(e){return{err:"entrada malformada"}}}
+window.boardTake=i=>{const f=S.fedInfo;const o=f&&f.board&&f.board[i];if(!o||o.err)return;
+if(S.tradeOut&&S.tradeOut.id===o.d.id){S.fedErr="Esa oferta es tuya.";render();return}
+S.screen="trade";S.trGive=null;S.trWants=[];S.trGiveFor=null;S.trCloseCode=null;
+S.trIn=o.d;S.trMsg=`Oferta traída del tablón de ${f.name}.${o.contact?` Cierre por: ${esc(o.contact)}`:""}`;render()};
 window.fedTravel=()=>{const f=S.fedInfo;if(!f)return;
 const code=buildSaveCode();
 window.open(f.url+(code.length<1800?"#save="+encodeURIComponent(code):""),"_blank");

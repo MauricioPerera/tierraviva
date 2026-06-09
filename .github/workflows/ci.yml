@@ -14,6 +14,8 @@ jobs:
           node-version: 20
       - name: Lint del contrato
         run: node tools/game-lint.js
+      - name: Lint del tablón de intercambios
+        run: node tools/trades-lint.js
       - name: Drift del generado
         run: node tools/game-export.js --check
       - name: Suite de tests

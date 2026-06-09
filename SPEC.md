@@ -118,3 +118,13 @@ Todos base64 de JSON (UTF-8 vía `unescape(encodeURIComponent(..))`):
 - **Oferta de intercambio**: `{ k: "offer", id, world, c: criatura, wants: [especies] }`.
 - **Cierre**: `{ k: "close", id, world, c: criatura }`. Las criaturas recibidas se validan ESTRICTO (`tradeCheck`): se rechazan, no se recortan.
 - Viaje federado: hash `#save=<código>` en la URL del mundo destino.
+
+## Tablón de intercambios (`trades.json`)
+
+Cada mundo puede publicar ofertas abiertas en `trades.json` (raíz del repo, junto al juego):
+
+```json
+{ "world": "<worldId>", "offers": [ { "code": "<código de oferta>", "contact": "dónde mandar el cierre" } ] }
+```
+
+Validado por `node tools/trades-lint.js` (corre en CI): `world` debe coincidir con `federation.worldId`, máximo 50 ofertas, cada `code` debe decodificar a una oferta con id único `[a-z0-9]{4,12}`, mundo coincidente, `wants` existentes (≤3) y criatura que pase los mismos criterios estrictos que `tradeCheck` (la paridad de veredictos se verifica en tests). `contact` opcional, ≤200 caracteres. Publicar/retirar ofertas = PR; el cierre del intercambio usa los códigos de la fase 1. Los clientes federados leen el tablón con `fetch` y re-validan cada oferta **contra su propio contrato** antes de ofrecer aceptarla.

@@ -10,6 +10,7 @@ const root = path.join(__dirname, "..");
 
 const steps = [
   ["lint del contrato", [path.join(root, "tools", "game-lint.js")]],
+  ["lint del tablón de intercambios", [path.join(root, "tools", "trades-lint.js")]],
   ["drift del generado", [path.join(root, "tools", "game-export.js"), "--check"]],
   ...fs.readdirSync(__dirname).filter(f => f.startsWith("test-") && f.endsWith(".js")).sort()
     .map(f => [f, [path.join(__dirname, f)]]),
