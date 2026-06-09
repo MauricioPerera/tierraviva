@@ -400,19 +400,47 @@ const code=btoa(unescape(encodeURIComponent(JSON.stringify(d))));const inp=docum
 let msg="Código generado. Copialo y guardalo en un lugar seguro.";
 if(navigator.clipboard){navigator.clipboard.writeText(code).then(()=>{document.getElementById("msg").textContent="Código de guardado copiado al portapapeles."}).catch(()=>{})}
 document.getElementById("msg").textContent=msg};
+/* Saneamiento de códigos de guardado: el estado se reconstruye SOLO con claves que
+   existen en el contrato y números acotados. Un código manipulado no puede inyectar
+   HTML (los nombres siempre salen de SPECIES/MOVES/etc.) ni corromper el estado. */
+function cleanNum(v,def,min,max){v=Number(v);return Number.isFinite(v)?Math.min(max,Math.max(min,Math.round(v))):def}
+function cleanCreature(c){if(!c||!SPECIES[c.name])return null;
+const lvl=cleanNum(c.lvl,1,1,99);const out=mk(c.name,lvl);
+out.maxhp=cleanNum(c.maxhp,out.maxhp,1,9999);
+out.hp=cleanNum(c.hp,out.maxhp,0,out.maxhp);
+out.atk=cleanNum(c.atk,out.atk,1,9999);
+out.xp=cleanNum(c.xp,0,0,1e6);out.next=cleanNum(c.next,lvl*20,1,1e6);
+const mv=(Array.isArray(c.mv)?c.mv.filter(m=>MOVES[m]):[]).slice(0,4);
+out.mv=mv.length?mv:[...SPECIES[c.name].mv];
+out.st=STATUS[c.st]?c.st:null;
+if(c.g==="M"||c.g==="F")out.g=c.g;
+return out}
 window.loadGame=()=>{const v=document.getElementById("loadcode").value.trim();if(!v)return;
-try{const d=JSON.parse(decodeURIComponent(escape(atob(v))));Object.assign(S,d);
-if(!d.dex){S.dex={};S.team.forEach(c=>reg(c.name))}
-S.egg=d.egg||null;
-S.coins=d.coins||0;
-S.mats=d.mats||{};
-S.bld=d.bld||{};
-S.steps=d.steps||0;
-S.exp=d.exp||null;
-S.box=d.box||[];
-S.mounts=d.mounts||Object.fromEntries(MOUNT_KEYS.map(k=>[k,false]));
-S.team.concat(S.box).forEach(c=>{if(!c.g)c.g=Math.random()<.5?"M":"F"});
-if(!d.zone||!ZONES[d.zone]){S.zone=PLAYER.start[0];S.px=PLAYER.start[1];S.py=PLAYER.start[2]}
+try{const d=JSON.parse(decodeURIComponent(escape(atob(v))));
+const team=(Array.isArray(d.team)?d.team:[]).map(cleanCreature).filter(Boolean).slice(0,4);
+if(!team.length)throw new Error("equipo vacío");
+S.team=team;
+S.box=(Array.isArray(d.box)?d.box:[]).map(cleanCreature).filter(Boolean).slice(0,STORAGE.cap);
+S.balls=cleanNum(d.balls,0,0,999);
+S.items={p:cleanNum(d.items&&d.items.p,0,0,999),s:cleanNum(d.items&&d.items.s,0,0,999)};
+S.coins=cleanNum(d.coins,0,0,1e9);
+S.steps=cleanNum(d.steps,0,0,1e9);
+S.mats={};Object.keys(MATERIALS).forEach(k=>{const n=cleanNum(d.mats&&d.mats[k],0,0,1e6);if(n)S.mats[k]=n});
+S.bld={};Object.keys(BUILDINGS).forEach(k=>{if(d.bld&&d.bld[k]===true)S.bld[k]=true});
+S.beaten={};Object.keys(TRAINERS).forEach(k=>{if(d.beaten&&d.beaten[k])S.beaten[k]=true});
+S.dex={};Object.keys(SPECIES).forEach(k=>{if(d.dex&&d.dex[k])S.dex[k]=true});
+S.team.concat(S.box).forEach(c=>reg(c.name));
+S.mounts=Object.fromEntries(MOUNT_KEYS.map(k=>[k,!!(d.mounts&&d.mounts[k]===true)]));
+S.egg=null;
+if(d.egg&&SPECIES[d.egg.sp]){const emv=(Array.isArray(d.egg.mv)?d.egg.mv.filter(m=>MOVES[m]):[]).slice(0,2);
+S.egg={sp:d.egg.sp,mv:emv.length?emv:[...SPECIES[d.egg.sp].mv],hp:cleanNum(d.egg.hp,0,0,99),atk:cleanNum(d.egg.atk,0,0,99),steps:cleanNum(d.egg.steps,0,0,999)}}
+S.exp=null;
+if(d.exp&&BIOMES[d.exp.biome]){const ec=cleanCreature(d.exp.c);
+if(ec)S.exp={c:ec,biome:d.exp.biome,steps:cleanNum(d.exp.steps,0,0,999)}}
+const Z=ZONES[d.zone];const px=cleanNum(d.px,-1,0,999),py=cleanNum(d.py,-1,0,999);
+const ch=Z&&(Z.map[py]||[])[px];
+if(ch&&!(TILES[ch]&&TILES[ch].solid)){S.zone=d.zone;S.px=px;S.py=py}
+else{S.zone=PLAYER.start[0];S.px=PLAYER.start[1];S.py=PLAYER.start[2]}
 S.screen="map";S.battle=null;S.msg="Partida cargada. ¡Bienvenido de vuelta!";render()}
 catch(e){document.getElementById("loadcode").value="Código inválido"}};
 
