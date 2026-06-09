@@ -13,7 +13,7 @@ function lintGame(d) {
   const add = (level, rule, msg) => F.push({ level, rule, msg });
 
   // required-fields
-  for (const f of ['version', 'name', 'types', 'effectiveness', 'status', 'moves', 'species', 'trainers', 'shop', 'tiles', 'biomes', 'materials', 'recipes', 'expeditions', 'buildings', 'storage', 'balance', 'breeding', 'player', 'zones'])
+  for (const f of ['version', 'name', 'types', 'effectiveness', 'status', 'moves', 'species', 'descriptions', 'trainers', 'shop', 'tiles', 'biomes', 'materials', 'recipes', 'expeditions', 'buildings', 'storage', 'balance', 'breeding', 'player', 'zones'])
     if (!(f in d)) add('error', 'required-fields', 'Falta el campo obligatorio: ' + f);
 
   const types = d.types || {}, eff = d.effectiveness || {}, status = d.status || {};
@@ -63,6 +63,13 @@ function lintGame(d) {
     if (sp.starter) starters++;
   }
   if (starters < 1) add('error', 'starters-exist', 'No hay ninguna especie con starter: true');
+
+  // species-desc: toda especie con descripción, sin descripciones huérfanas
+  const descs = d.descriptions || {};
+  for (const n of Object.keys(species))
+    if (typeof descs[n] !== 'string' || !descs[n].trim()) add('error', 'species-desc', 'falta la descripción de ' + n);
+  for (const n of Object.keys(descs))
+    if (!(n in species)) add('error', 'species-desc', 'descripción de especie inexistente: ' + n);
 
   // biome-valid (todo bioma con nombre, pool, en tiles, con rate/niveles sanos)
   for (const [ch, b] of Object.entries(biomes)) {

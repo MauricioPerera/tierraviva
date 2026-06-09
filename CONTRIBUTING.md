@@ -15,7 +15,13 @@
    - `habitats`: en qué biomas aparece salvaje (`G` pastizales, `B` bosque, `M` montaña, `A` lago). Sin `habitats`, solo se obtiene por evolución o crianza.
    - Opcional: `evo`/`evoLvl` para darle evolución, `starter: true` no (los iniciales son 3).
 
-2. **Validá y regenerá** (solo necesitás Node, sin `npm install`):
+2. **Agregale su descripción** en el bloque `descriptions` (obligatoria, una línea de lore; acá las comas sí están permitidas):
+
+```yaml
+  Rocopa: Un topo de roca que colecciona piedritas brillantes, una por cada túnel terminado.
+```
+
+3. **Validá y regenerá** (solo necesitás Node, sin `npm install`):
 
 ```
 node tools/game-lint.js        # valida referencias y balance
@@ -23,7 +29,7 @@ node tools/game-export.js      # regenera game-data.generated.js (commitealo)
 node tests/run.js              # suite completa
 ```
 
-3. **Abrí el PR.** El CI corre lint + drift + tests; el merge se bloquea si algo falla. Si te olvidás de regenerar el generado, el chequeo de drift te lo va a decir.
+4. **Abrí el PR.** El CI corre lint + drift + tests; el merge se bloquea si algo falla. Si te olvidás de regenerar el generado, el chequeo de drift te lo va a decir.
 
 ## Reglas de balance (las aplica el lint, no son opinables en el PR)
 

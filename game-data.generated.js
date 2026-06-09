@@ -357,6 +357,28 @@ window.GAME = {
       ]
     }
   },
+  "DESCS": {
+    "Flarito": "Una chispa con patas. Enciende la punta de su cola cuando se emociona, y la apaga de un soplido para dormir.",
+    "Aquino": "Escupe chorros precisos para cazar insectos. Dicen que nunca falla dos veces seguidas.",
+    "Brotin": "Le brota una hoja nueva cada vez que aprende algo. Los más viejos parecen arbustos caminantes.",
+    "Flaranto": "La evolución templó su llama, y ya no chispea, ruge. Su mordida deja brasas.",
+    "Aquantor": "Genera mareas en miniatura con un giro del cuerpo. Los pescadores lo siguen para encontrar cardúmenes.",
+    "Brotalon": "Sus hojas cortan como navajas y se afilan solas con el rocío del amanecer.",
+    "Ratopo": "Cava túneles cortos por toda la pradera. Si lo perdés de vista, ya está atrás tuyo.",
+    "Llamiza": "Una brasa errante que chamusca el pasto seco donde pisa. Por suerte, pisa poco.",
+    "Gotalia": "Vive entre el pasto húmedo y la orilla del lago. Carga una gota en la frente que nunca se cae.",
+    "Hojarin": "Se disfraza de planta común. La diferencia es que las plantas no estornudan.",
+    "Fumarol": "Exhala humo espeso para esconderse en el bosque oscuro. Se le ve la nariz brillar entre la niebla.",
+    "Torrentin": "Un torrente con mal humor. Embiste a todo lo que se mueva más rápido que él.",
+    "Espinor": "Cada espina de su lomo es un trofeo de combate. A los más viejos casi no les queda lugar libre.",
+    "Sombrux": "Aparece donde la sombra del bosque es más densa. Nadie lo vio llegar, ni irse.",
+    "Magmoz": "Sus colmillos guardan calor de magma. Duerme enterrado en ceniza volcánica.",
+    "Cascadon": "Trepa cascadas a contracorriente para demostrar fuerza. El que llega arriba lidera el cardumen.",
+    "Zarzudo": "Una zarza andante que paraliza con esporas a quien intente podarla.",
+    "Rocaroz": "Un peñasco con carácter. Aturde a sus rivales a cabezazos y jamás retrocede.",
+    "Ondino": "Surfea las olas del lago sin esfuerzo. Su silbido anuncia tormenta.",
+    "Coralix": "Un jardín de coral en miniatura. Sus esporas adormecen hasta al pescador más paciente."
+  },
   "TRAINERS": {
     "1": {
       "name": "Bruno",

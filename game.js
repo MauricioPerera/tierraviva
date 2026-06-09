@@ -17,6 +17,27 @@ Ratopo:{t:"normal",hp:36,atk:9,mv:["placaje","mordisco"],habitats:["G"]},Llamiza
 Fumarol:{t:"fuego",hp:46,atk:13,mv:["ascuas","mordisco"],habitats:["B"]},Torrentin:{t:"agua",hp:50,atk:13,mv:["chorro","mordisco"],habitats:["B","A"]},Espinor:{t:"planta",hp:52,atk:12,mv:["latigo","mordisco"],habitats:["B"]},Sombrux:{t:"normal",hp:48,atk:14,mv:["mordisco","placaje"],habitats:["B"]},
 Magmoz:{t:"fuego",hp:54,atk:15,mv:["colmillo","mordisco"],habitats:["M"]},Cascadon:{t:"agua",hp:58,atk:14,mv:["maremoto","aturdir"],habitats:["M"]},Zarzudo:{t:"planta",hp:60,atk:13,mv:["esporas","hojafilo"],habitats:["M"]},Rocaroz:{t:"normal",hp:62,atk:15,mv:["aturdir","mordisco"],habitats:["M"]},
 Ondino:{t:"agua",hp:46,atk:12,mv:["chorro","aturdir"],habitats:["A"]},Coralix:{t:"planta",hp:52,atk:11,mv:["esporas","latigo"],habitats:["A"]}};
+const DESCS=GD.DESCS||{
+Flarito:"Una chispa con patas. Enciende la punta de su cola cuando se emociona, y la apaga de un soplido para dormir.",
+Aquino:"Escupe chorros precisos para cazar insectos. Dicen que nunca falla dos veces seguidas.",
+Brotin:"Le brota una hoja nueva cada vez que aprende algo. Los más viejos parecen arbustos caminantes.",
+Flaranto:"La evolución templó su llama, y ya no chispea, ruge. Su mordida deja brasas.",
+Aquantor:"Genera mareas en miniatura con un giro del cuerpo. Los pescadores lo siguen para encontrar cardúmenes.",
+Brotalon:"Sus hojas cortan como navajas y se afilan solas con el rocío del amanecer.",
+Ratopo:"Cava túneles cortos por toda la pradera. Si lo perdés de vista, ya está atrás tuyo.",
+Llamiza:"Una brasa errante que chamusca el pasto seco donde pisa. Por suerte, pisa poco.",
+Gotalia:"Vive entre el pasto húmedo y la orilla del lago. Carga una gota en la frente que nunca se cae.",
+Hojarin:"Se disfraza de planta común. La diferencia es que las plantas no estornudan.",
+Fumarol:"Exhala humo espeso para esconderse en el bosque oscuro. Se le ve la nariz brillar entre la niebla.",
+Torrentin:"Un torrente con mal humor. Embiste a todo lo que se mueva más rápido que él.",
+Espinor:"Cada espina de su lomo es un trofeo de combate. A los más viejos casi no les queda lugar libre.",
+Sombrux:"Aparece donde la sombra del bosque es más densa. Nadie lo vio llegar, ni irse.",
+Magmoz:"Sus colmillos guardan calor de magma. Duerme enterrado en ceniza volcánica.",
+Cascadon:"Trepa cascadas a contracorriente para demostrar fuerza. El que llega arriba lidera el cardumen.",
+Zarzudo:"Una zarza andante que paraliza con esporas a quien intente podarla.",
+Rocaroz:"Un peñasco con carácter. Aturde a sus rivales a cabezazos y jamás retrocede.",
+Ondino:"Surfea las olas del lago sin esfuerzo. Su silbido anuncia tormenta.",
+Coralix:"Un jardín de coral en miniatura. Sus esporas adormecen hasta al pescador más paciente."};
 const TRAINERS=GD.TRAINERS||{"1":{name:"Bruno",team:[["Llamiza",7],["Fumarol",9]],reward:{balls:3,p:2,s:0,c:60}},"2":{name:"Sora",team:[["Torrentin",11],["Sombrux",12]],reward:{balls:4,p:0,s:2,c:90}},"3":{name:"Lia",team:[["Hojarin",6]],reward:{balls:2,p:1,s:0,c:35}},"4":{name:"Magna",team:[["Magmoz",14],["Zarzudo",15],["Rocaroz",16]],reward:{balls:5,p:2,s:2,c:250},requires:[1,2,3],champion:true}};
 const SHOP=GD.SHOP||{ball:{n:"Esfera",pr:8,ic:"ti-circle-dot"},p:{n:"Poción (+25 PS)",pr:10,ic:"ti-flask"},s:{n:"Superpoción (+60 PS)",pr:25,ic:"ti-flask-2"},ma:{n:"Montura acuática",pr:120,ic:"ti-droplet",mount:"agua",d:"permite cruzar el agua"},mm:{n:"Montura montés",pr:160,ic:"ti-mountain",mount:"montes",d:"permite escalar rocas"}};
 const TILES=GD.TILES||{
@@ -80,6 +101,7 @@ return `<div class="card" style="text-align:center;cursor:pointer" onclick="pick
 <div style="display:flex;justify-content:center;margin-bottom:10px">${sprite({t:sp.t},56)}</div>
 <p style="font-weight:500;margin:0 0 6px">${n}${EVO[n]?` → ${EVO[n][0]} (nv. ${EVO[n][1]})`:""}</p>${badge(sp.t)}
 <p style="font-size:12px;color:var(--color-text-secondary);margin:8px 0 0">PS ${sp.hp} · Ataque ${sp.atk}</p>
+<p style="font-size:12px;color:var(--color-text-tertiary);margin:6px 0 0;line-height:1.5">${DESCS[n]||""}</p>
 <button style="margin-top:10px;width:100%">Elegir</button></div>`}).join("")}</div>
 <div style="margin-top:1.5rem"><p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 6px">¿Tenés una partida guardada? Pegá el código acá:</p>
 <div class="row"><input id="loadcode" placeholder="Código de guardado" style="flex:1"/><button onclick="loadGame()">Cargar</button></div></div>`))}
@@ -196,7 +218,8 @@ if(!S.dex[n])return `<div class="card" style="padding:10px;text-align:center;opa
 return `<div class="card" style="padding:10px;text-align:center">
 <div style="display:flex;justify-content:center;margin-bottom:6px">${sprite({t:sp.t},40)}</div>
 <p style="margin:0 0 4px;font-size:13px;font-weight:500">#${num} ${n}</p>${badge(sp.t)}
-<p style="font-size:11px;color:var(--color-text-secondary);margin:6px 0 0">PS ${sp.hp} · Ataque ${sp.atk}<br>${sp.mv.map(m=>MOVES[m].n).join(" · ")}</p></div>`}).join("")}
+<p style="font-size:11px;color:var(--color-text-secondary);margin:6px 0 0">PS ${sp.hp} · Ataque ${sp.atk}<br>${sp.mv.map(m=>MOVES[m].n).join(" · ")}</p>
+<p style="font-size:11px;color:var(--color-text-tertiary);margin:6px 0 0;line-height:1.5;text-align:left">${DESCS[n]||""}</p></div>`}).join("")}
 </div>
 <button style="margin-top:12px" onclick="closeDex()"><i class="ti ti-arrow-left" aria-hidden="true"></i> Volver al mapa</button></div>`))}
 window.openDex=()=>{S.screen="dex";render()};

@@ -4,7 +4,7 @@ const { boot, sortedJson, ok, done } = require("./helpers");
 const A = boot(true), B = boot(false);
 
 // Paridad: cada constante de datos idéntica con y sin game-data.generated.js
-const DATA_KEYS = ["TYPES", "EFF", "STATUS", "MOVES", "SPECIES", "TRAINERS", "SHOP", "TILES",
+const DATA_KEYS = ["TYPES", "EFF", "STATUS", "MOVES", "SPECIES", "DESCS", "TRAINERS", "SHOP", "TILES",
   "BIOMES", "MATERIALS", "RECIPES", "EXPEDITIONS", "BUILDINGS", "STORAGE", "BREED", "PLAYER",
   "ZONES", "WILD", "EVO", "BASE", "STARTERS", "MOUNT_KEYS"];
 for (const key of DATA_KEYS)
@@ -17,6 +17,7 @@ ok(A.BASE.Flaranto === "Flarito" && A.BASE.Aquantor === "Aquino", "BASE derivado
 ok(Object.keys(A.WILD).sort().join() === Object.keys(A.BIOMES).sort().join(), "WILD cubre exactamente los biomas");
 ok(A.WILD.A.includes("Ondino") && A.WILD.G.includes("Gotalia") && A.WILD.A.includes("Gotalia"), "habitats múltiples derivan a varios pools");
 ok(A.MOUNT_KEYS.sort().join() === ["agua", "montes"].join(), "MOUNT_KEYS derivado de tiles");
+ok(Object.keys(A.SPECIES).every(n => typeof A.DESCS[n] === "string" && A.DESCS[n].length > 0), "toda especie tiene descripción");
 
 // Ambos modos arrancan
 A.g.pick("Flarito");

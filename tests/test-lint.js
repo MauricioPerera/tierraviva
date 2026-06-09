@@ -69,6 +69,15 @@ d = clone();
 delete d.zones.monte.warps["0,4"];
 ok(hasError(d, "warp-valid") || hasError(d, "zone-connectivity"), "zona desconectada o E sin warp rechazada");
 
+// Descripciones: obligatorias y sin huérfanas
+d = clone();
+d.species.Rocopa = { t: "normal", hp: 48, atk: 12, mv: ["placaje"], habitats: ["M"] };
+ok(hasError(d, "species-desc"), "especie sin descripción rechazada");
+
+d = clone();
+d.descriptions.Fantasmux = "Una descripción de nadie.";
+ok(hasError(d, "species-desc"), "descripción de especie inexistente rechazada");
+
 // La evolución que no mejora stats es warning (no bloquea, avisa)
 d = clone();
 d.species.Flaranto.hp = 30;
