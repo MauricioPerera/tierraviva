@@ -2,6 +2,8 @@
 
 ¡Gracias por querer sumar contenido! El juego está diseñado para que agregar criaturas, movimientos o zonas **no requiera tocar el motor**: todo el contenido vive en [`GAME.md`](GAME.md) como tokens YAML, validados automáticamente.
 
+> **¿Trabajás con un agente de IA?** El repo está preparado: [AGENTS.md](AGENTS.md) (instrucciones del proyecto), [SPEC.md](SPEC.md) (especificación de todos los tokens) y skills paso a paso en `.claude/skills/` (`add-creature`, `add-zone`, `create-world`). Claude Code las detecta solo; con otros agentes, pasale esos archivos como contexto.
+
 ## Cómo agregar una criatura
 
 1. **Forkeá el repo** y editá `GAME.md`. Agregá tu especie en el bloque `species`:

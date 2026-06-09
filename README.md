@@ -125,7 +125,7 @@ Para sumar tu fork a la federación: publicalo en GitHub Pages, poné tu `worldI
 
 ## Contribuir
 
-Se aceptan criaturas, movimientos y zonas nuevas vía PR editando solo `GAME.md` — ver [CONTRIBUTING.md](CONTRIBUTING.md). El lint aplica reglas de balance duras (presupuesto de stats, potencias y probabilidades acotadas, entrenadores con nivel máximo) para que ningún aporte pueda romper el juego, y el CI bloquea el merge si algo falla.
+Se aceptan criaturas, movimientos y zonas nuevas vía PR editando solo `GAME.md` — ver [CONTRIBUTING.md](CONTRIBUTING.md). Si trabajás **asistido por un agente de IA** (Claude Code u otro): el repo trae [AGENTS.md](AGENTS.md) con las instrucciones del proyecto, [SPEC.md](SPEC.md) con la especificación formal de cada token del contrato, y skills guiadas en `.claude/skills/` para agregar criaturas (`add-creature`), zonas (`add-zone`) y crear tu propio mundo federado (`create-world`). El lint aplica reglas de balance duras (presupuesto de stats, potencias y probabilidades acotadas, entrenadores con nivel máximo) para que ningún aporte pueda romper el juego, y el CI bloquea el merge si algo falla.
 
 ## Estructura
 
