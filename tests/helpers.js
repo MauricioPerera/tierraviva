@@ -10,7 +10,7 @@ const code = fs.readFileSync(path.join(root, "game.js"), "utf8");
 const genSrc = fs.readFileSync(path.join(root, "game-data.generated.js"), "utf8");
 
 const EXPORTS = "TYPES,EFF,STATUS,MOVES,SPECIES,DESCS,TRAINERS,SHOP,TILES,BIOMES,MATERIALS,RECIPES," +
-  "EXPEDITIONS,BUILDINGS,STORAGE,BREED,PLAYER,ZONES,WILD,EVO,BASE,STARTERS,MOUNT_KEYS," +
+  "EXPEDITIONS,BUILDINGS,STORAGE,SFX,MUSIC,BREED,PLAYER,ZONES,WILD,EVO,BASE,STARTERS,MOUNT_KEYS," +
   "S,mk,startWild,startTrainer,gainXp";
 
 function boot(withGenerated = true) {

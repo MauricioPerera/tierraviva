@@ -16,6 +16,7 @@ function buildGame(d) {
     SPECIES: d.species, DESCS: d.descriptions, TRAINERS: d.trainers, SHOP: d.shop, TILES: d.tiles,
     BIOMES: d.biomes, MATERIALS: d.materials, RECIPES: d.recipes,
     EXPEDITIONS: d.expeditions, BUILDINGS: d.buildings, STORAGE: d.storage,
+    SFX: d.sfx, MUSIC: d.music,
     BREED: d.breeding, PLAYER: d.player, ZONES: d.zones
   };
 }

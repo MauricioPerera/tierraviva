@@ -5,8 +5,8 @@ const A = boot(true), B = boot(false);
 
 // Paridad: cada constante de datos idéntica con y sin game-data.generated.js
 const DATA_KEYS = ["TYPES", "EFF", "STATUS", "MOVES", "SPECIES", "DESCS", "TRAINERS", "SHOP", "TILES",
-  "BIOMES", "MATERIALS", "RECIPES", "EXPEDITIONS", "BUILDINGS", "STORAGE", "BREED", "PLAYER",
-  "ZONES", "WILD", "EVO", "BASE", "STARTERS", "MOUNT_KEYS"];
+  "BIOMES", "MATERIALS", "RECIPES", "EXPEDITIONS", "BUILDINGS", "STORAGE", "SFX", "MUSIC",
+  "BREED", "PLAYER", "ZONES", "WILD", "EVO", "BASE", "STARTERS", "MOUNT_KEYS"];
 for (const key of DATA_KEYS)
   ok(sortedJson(A[key]) === sortedJson(B[key]), `paridad generado/embebido: ${key}`);
 

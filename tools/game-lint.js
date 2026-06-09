@@ -13,7 +13,7 @@ function lintGame(d) {
   const add = (level, rule, msg) => F.push({ level, rule, msg });
 
   // required-fields
-  for (const f of ['version', 'name', 'types', 'effectiveness', 'status', 'moves', 'species', 'descriptions', 'trainers', 'shop', 'tiles', 'biomes', 'materials', 'recipes', 'expeditions', 'buildings', 'storage', 'balance', 'breeding', 'player', 'zones'])
+  for (const f of ['version', 'name', 'types', 'effectiveness', 'status', 'moves', 'species', 'descriptions', 'trainers', 'shop', 'tiles', 'biomes', 'materials', 'recipes', 'expeditions', 'buildings', 'storage', 'sfx', 'music', 'balance', 'breeding', 'player', 'zones'])
     if (!(f in d)) add('error', 'required-fields', 'Falta el campo obligatorio: ' + f);
 
   const types = d.types || {}, eff = d.effectiveness || {}, status = d.status || {};
@@ -207,6 +207,28 @@ function lintGame(d) {
 
   // storage-valid
   if (!((d.storage || {}).cap > 0)) add('error', 'storage-valid', 'storage.cap faltante o inválido');
+
+  // sfx-valid / music-valid (audio sintetizado)
+  const WAVES = new Set(['square', 'triangle', 'sine', 'sawtooth']);
+  const SFX_KEYS = ['encounter', 'hit', 'super', 'faint', 'capture', 'escape', 'levelup', 'evolve', 'heal', 'buy', 'hatch', 'win', 'warp'];
+  const sfxD = d.sfx || {};
+  for (const k of SFX_KEYS) if (!(k in sfxD)) add('error', 'sfx-valid', 'falta el sfx requerido por el motor: ' + k);
+  for (const [k, s] of Object.entries(sfxD)) {
+    if (!(s.freq >= 20 && s.freq <= 20000)) add('error', 'sfx-valid', 'sfx ' + k + ': freq fuera de 20..20000: ' + s.freq);
+    if (!(s.dur > 0 && s.dur <= 5)) add('error', 'sfx-valid', 'sfx ' + k + ': dur fuera de (0,5]: ' + s.dur);
+    if (s.freq2 != null && !(s.freq2 >= 20 && s.freq2 <= 20000)) add('error', 'sfx-valid', 'sfx ' + k + ': freq2 inválida: ' + s.freq2);
+    if (s.type && !WAVES.has(s.type)) add('error', 'sfx-valid', 'sfx ' + k + ': onda desconocida: ' + s.type);
+  }
+  const musD = d.music || {};
+  for (const k of ['map', 'battle']) if (!(k in musD)) add('error', 'music-valid', 'falta el tema requerido por el motor: ' + k);
+  for (const [k, m] of Object.entries(musD)) {
+    if (!(m.tempo >= 40 && m.tempo <= 300)) add('error', 'music-valid', 'tema ' + k + ': tempo fuera de 40..300: ' + m.tempo);
+    if (!WAVES.has(m.wave)) add('error', 'music-valid', 'tema ' + k + ': onda desconocida: ' + m.wave);
+    if (!(m.vol > 0 && m.vol <= 0.2)) add('error', 'music-valid', 'tema ' + k + ': vol fuera de (0,0.2]: ' + m.vol);
+    if (m.loop !== true && m.loop !== false) add('error', 'music-valid', 'tema ' + k + ': loop debe ser booleano');
+    if (!Array.isArray(m.notes) || m.notes.length < 1 || m.notes.some(n => !Number.isInteger(n) || n < 0 || n > 127))
+      add('error', 'music-valid', 'tema ' + k + ': notes debe ser una lista de enteros MIDI 0..127');
+  }
 
   // balance-valid: límites anti contenido roto (criaturas inmortales, movimientos desmedidos, jefes imposibles)
   const bal = d.balance || {};

@@ -684,6 +684,136 @@ window.GAME = {
   "STORAGE": {
     "cap": 24
   },
+  "SFX": {
+    "encounter": {
+      "freq": 392,
+      "dur": 0.12
+    },
+    "hit": {
+      "freq": 220,
+      "dur": 0.08,
+      "type": "sawtooth"
+    },
+    "super": {
+      "freq": 660,
+      "dur": 0.1
+    },
+    "faint": {
+      "freq": 110,
+      "dur": 0.4,
+      "type": "triangle"
+    },
+    "capture": {
+      "freq": 523,
+      "dur": 0.12,
+      "freq2": 784
+    },
+    "escape": {
+      "freq": 330,
+      "dur": 0.15,
+      "type": "sawtooth"
+    },
+    "levelup": {
+      "freq": 587,
+      "dur": 0.1,
+      "freq2": 880
+    },
+    "evolve": {
+      "freq": 523,
+      "dur": 0.15,
+      "freq2": 1047
+    },
+    "heal": {
+      "freq": 698,
+      "dur": 0.15,
+      "type": "sine"
+    },
+    "buy": {
+      "freq": 784,
+      "dur": 0.07
+    },
+    "hatch": {
+      "freq": 659,
+      "dur": 0.12,
+      "freq2": 988
+    },
+    "win": {
+      "freq": 523,
+      "dur": 0.12,
+      "freq2": 1047
+    },
+    "warp": {
+      "freq": 494,
+      "dur": 0.1,
+      "type": "sine"
+    }
+  },
+  "MUSIC": {
+    "map": {
+      "tempo": 104,
+      "wave": "triangle",
+      "vol": 0.025,
+      "loop": true,
+      "notes": [
+        60,
+        0,
+        64,
+        0,
+        67,
+        0,
+        64,
+        0,
+        69,
+        0,
+        67,
+        0,
+        64,
+        62,
+        60,
+        0,
+        62,
+        0,
+        65,
+        0,
+        69,
+        0,
+        65,
+        0,
+        67,
+        0,
+        64,
+        0,
+        62,
+        0,
+        60,
+        0
+      ]
+    },
+    "battle": {
+      "tempo": 148,
+      "wave": "square",
+      "vol": 0.02,
+      "loop": true,
+      "notes": [
+        57,
+        57,
+        0,
+        60,
+        57,
+        0,
+        62,
+        63,
+        62,
+        60,
+        57,
+        0,
+        55,
+        0,
+        57,
+        0
+      ]
+    }
+  },
   "BREED": {
     "eggSteps": 24,
     "hatchLvl": 5,

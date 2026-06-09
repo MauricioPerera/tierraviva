@@ -8,6 +8,8 @@ Abrí `index.html` en cualquier navegador moderno. No requiere servidor ni insta
 
 Controles: flechas del teclado o los botones en pantalla para moverte. Todo lo demás es por clic.
 
+Hay música y efectos de sonido sintetizados con Web Audio (sin archivos de audio): tema de mapa, tema de batalla y tonos por evento (golpes, capturas, subidas de nivel, etc.), todos declarados en el contrato. El botón de altavoz del mapa silencia todo; la preferencia viaja en el código de guardado. Por política de los navegadores, el audio arranca con tu primera interacción.
+
 ## Mecánicas
 
 Elegís una de tres criaturas iniciales: Flarito (fuego), Aquino (agua) o Brotín (planta). El triángulo de tipos es el clásico: fuego supera a planta, planta a agua, agua a fuego. Los movimientos del mismo tipo que la criatura reciben un bonus del 30% (STAB).

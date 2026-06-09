@@ -51,6 +51,8 @@ const RECIPES=GD.RECIPES||{p:{savia:2,pelaje:1},s:{perla:2,ceniza:2},ball:{pelaj
 const EXPEDITIONS=GD.EXPEDITIONS||{duration:30,coinsPerLvl:1,rolls:3,matChance:.5};
 const BUILDINGS=GD.BUILDINGS||{brasero:{n:"Brasero ígneo",ic:"ti-flame",pr:150,mat:"ceniza",every:12},draga:{n:"Draga de perlas",ic:"ti-droplet",pr:150,mat:"perla",every:12},invernadero:{n:"Invernadero",ic:"ti-leaf",pr:150,mat:"savia",every:12},esquiladora:{n:"Esquiladora",ic:"ti-paw",pr:150,mat:"pelaje",every:12}};
 const STORAGE=GD.STORAGE||{cap:24};
+const SFX=GD.SFX||{encounter:{freq:392,dur:.12},hit:{freq:220,dur:.08,type:"sawtooth"},super:{freq:660,dur:.1},faint:{freq:110,dur:.4,type:"triangle"},capture:{freq:523,dur:.12,freq2:784},escape:{freq:330,dur:.15,type:"sawtooth"},levelup:{freq:587,dur:.1,freq2:880},evolve:{freq:523,dur:.15,freq2:1047},heal:{freq:698,dur:.15,type:"sine"},buy:{freq:784,dur:.07},hatch:{freq:659,dur:.12,freq2:988},win:{freq:523,dur:.12,freq2:1047},warp:{freq:494,dur:.1,type:"sine"}};
+const MUSIC=GD.MUSIC||{map:{tempo:104,wave:"triangle",vol:.025,loop:true,notes:[60,0,64,0,67,0,64,0,69,0,67,0,64,62,60,0,62,0,65,0,69,0,65,0,67,0,64,0,62,0,60,0]},battle:{tempo:148,wave:"square",vol:.02,loop:true,notes:[57,57,0,60,57,0,62,63,62,60,57,0,55,0,57,0]}};
 const BREED=GD.BREED||{eggSteps:24,hatchLvl:5,hpDiv:40,atkDiv:20};
 const PLAYER=GD.PLAYER||{start:["pueblo",6,4],respawn:["pueblo",3,3],balls:8,potions:3,supers:1};
 const ZONES=GD.ZONES||{
@@ -74,10 +76,36 @@ const MOUNT_KEYS=[...new Set(Object.values(TILES).map(t=>t.mount).filter(Boolean
 /* ============================================================
    Estado global
    ============================================================ */
-let S={screen:"start",zone:PLAYER.start[0],px:PLAYER.start[1],py:PLAYER.start[2],team:[],box:[],balls:PLAYER.balls,items:{p:PLAYER.potions,s:PLAYER.supers},coins:0,mats:{},bld:{},steps:0,exp:null,beaten:{},dex:{},egg:null,mounts:Object.fromEntries(MOUNT_KEYS.map(k=>[k,false])),msg:"",battle:null};
+let S={screen:"start",zone:PLAYER.start[0],px:PLAYER.start[1],py:PLAYER.start[2],team:[],box:[],balls:PLAYER.balls,items:{p:PLAYER.potions,s:PLAYER.supers},coins:0,mats:{},bld:{},steps:0,exp:null,beaten:{},dex:{},egg:null,mounts:Object.fromEntries(MOUNT_KEYS.map(k=>[k,false])),snd:true,msg:"",battle:null};
 const R=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
 function reg(name){S.dex[name]=true}
 function mk(name,lvl){const sp=SPECIES[name];const hp=Math.round(sp.hp+lvl*3.5);return{name,lvl,t:sp.t,maxhp:hp,hp,atk:sp.atk+lvl*2,xp:0,next:lvl*20,mv:[...sp.mv],st:null,g:Math.random()<.5?"M":"F"}}
+
+/* ============================================================
+   Audio (Web Audio API, sintetizado: sin assets externos)
+   ============================================================ */
+let AC=null,musTimer=null,musKey=null,musStep=0;
+const NOTE=n=>440*Math.pow(2,(n-69)/12);
+function audioOk(){return!!(typeof window!=="undefined"&&(window.AudioContext||window.webkitAudioContext))}
+function beep(freq,dur,type,vol,delay){if(!S.snd||!audioOk())return;
+try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();
+const t=AC.currentTime+(delay||0);
+const o=AC.createOscillator(),g=AC.createGain();
+o.type=type||"square";o.frequency.value=freq;
+g.gain.setValueAtTime(vol||.04,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);
+o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+dur)}catch(e){}}
+function sfx(k){const s=SFX[k];if(!s)return;beep(s.freq,s.dur,s.type);if(s.freq2)beep(s.freq2,s.dur,s.type,.04,s.dur)}
+function stopMusic(){if(musTimer){clearInterval(musTimer);musTimer=null}musKey=null}
+function updateMusic(){const want=S.screen==="battle"?"battle":S.screen==="start"?null:"map";
+if(!S.snd||!want||!audioOk()){stopMusic();return}
+if(musKey===want)return;
+stopMusic();const m=MUSIC[want];if(!m)return;
+musKey=want;musStep=0;const stepMs=60000/m.tempo/2;
+musTimer=setInterval(()=>{const n=m.notes[musStep];
+if(n>0)beep(NOTE(n),stepMs/1000*.85,m.wave,m.vol);
+musStep++;
+if(musStep>=m.notes.length){if(m.loop)musStep=0;else stopMusic()}},stepMs)}
+window.toggleSnd=()=>{S.snd=!S.snd;if(!S.snd)stopMusic();render()};
 
 /* ============================================================
    Helpers de UI
@@ -90,7 +118,7 @@ function gSym(c){if(!c.g)return"";return ` <span style="color:${c.g==="M"?"#185F
 function hpbar(c){const pct=Math.max(0,Math.round(c.hp/c.maxhp*100));const col=pct>50?"#639922":pct>20?"#EF9F27":"#E24B4A";
 return `<div style="display:flex;align-items:center;gap:8px"><div class="hpbar"><div class="hpfill" style="width:${pct}%;background:${col}"></div></div><span style="font-size:12px;color:var(--color-text-secondary);min-width:64px;text-align:right">${Math.max(0,c.hp)}/${c.maxhp} PS</span></div>`}
 function sprite(c,size){const T=TYPES[c.t];return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${T.bg};border:2px solid ${T.c};display:flex;align-items:center;justify-content:center;flex:none"><i class="ti ${T.icon}" aria-hidden="true" style="font-size:${Math.round(size*.5)}px;color:${T.c}"></i></div>`}
-function render(){G.innerHTML="";if(S.screen==="start")rStart();else if(S.screen==="map")rMap();else if(S.screen==="shop")rShop();else if(S.screen==="dex")rDex();else if(S.screen==="breed")rBreed();else if(S.screen==="craft")rCraft();else if(S.screen==="expd")rExp();else if(S.screen==="box")rBox();else rBattle()}
+function render(){G.innerHTML="";if(S.screen==="start")rStart();else if(S.screen==="map")rMap();else if(S.screen==="shop")rShop();else if(S.screen==="dex")rDex();else if(S.screen==="breed")rBreed();else if(S.screen==="craft")rCraft();else if(S.screen==="expd")rExp();else if(S.screen==="box")rBox();else rBattle();updateMusic()}
 
 /* ============================================================
    Pantalla: inicio
@@ -135,9 +163,9 @@ ${i>0?`<button style="padding:4px 8px;font-size:12px" onclick="lead(${i})" aria-
 </div></div>
 <p style="font-size:14px;margin-top:.75rem;min-height:20px" id="msg">${S.msg||""}</p>
 <p style="font-size:12px;color:var(--color-text-tertiary);margin:0 0 8px">Flechas o botones para moverte. Las casillas violetas con pin son salidas hacia otras zonas. Corazón: curación. Huevo: criadero. Herramientas: taller. Brújula: expediciones. Caja: base de criaturas. El agua y las rocas requieren montura (se venden en la tienda de Ciudad Terral).</p>
-<div class="row" style="flex-wrap:wrap"><button onclick="openDex()"><i class="ti ti-list-details" aria-hidden="true"></i> Criaturas ${Object.keys(S.dex).length}/${Object.keys(SPECIES).length}</button><button onclick="saveGame()"><i class="ti ti-download" aria-hidden="true"></i> Guardar partida</button><input id="savecode" readonly placeholder="El código aparece acá" style="flex:1;min-width:180px;font-size:12px"/></div>`))}
+<div class="row" style="flex-wrap:wrap"><button onclick="toggleSnd()" aria-label="${S.snd?"Silenciar":"Activar sonido"}"><i class="ti ${S.snd?"ti-volume":"ti-volume-off"}" aria-hidden="true"></i></button><button onclick="openDex()"><i class="ti ti-list-details" aria-hidden="true"></i> Criaturas ${Object.keys(S.dex).length}/${Object.keys(SPECIES).length}</button><button onclick="saveGame()"><i class="ti ti-download" aria-hidden="true"></i> Guardar partida</button><input id="savecode" readonly placeholder="El código aparece acá" style="flex:1;min-width:180px;font-size:12px"/></div>`))}
 window.lead=i=>{const c=S.team.splice(i,1)[0];S.team.unshift(c);S.msg=`${c.name} ahora lidera el equipo.`;render()};
-window.potion=(i,k)=>{if(S.items[k]<1)return;S.items[k]--;const c=S.team[i];c.hp=Math.min(c.maxhp,c.hp+(k==="p"?25:60));S.msg=`${c.name} recuperó PS.`;render()};
+window.potion=(i,k)=>{if(S.items[k]<1)return;S.items[k]--;const c=S.team[i];c.hp=Math.min(c.maxhp,c.hp+(k==="p"?25:60));S.msg=`${c.name} recuperó PS.`;sfx("heal");render()};
 window.mv=(dx,dy)=>{if(S.screen!=="map")return;const Z=ZONES[S.zone];const nx=S.px+dx,ny=S.py+dy;const ch=(Z.map[ny]||[])[nx];if(!ch)return;
 const ti=TILES[ch]||{};const tr=TRAINERS[ch];
 if(!tr&&ti.solid)return;
@@ -154,8 +182,8 @@ else if(S.egg&&S.egg.steps<=0&&room())hatchEgg();
 if(S.exp){if(S.exp.steps>0)S.exp.steps--;
 if(S.exp.steps<=0){if(room())endExpedition();else S.msg=`${S.exp.c.name} volvió de su expedición, pero el equipo y la base están llenos.`}}
 const w=Z.warps[nx+","+ny];
-if(w){S.zone=w[0];S.px=w[1];S.py=w[2];S.msg=`Llegaste a ${ZONES[w[0]].name}.`;render();return}
-if(ti.effect==="heal"){S.team.forEach(c=>{c.hp=c.maxhp;c.st=null});S.msg="El centro de curación restauró a tu equipo."}
+if(w){S.zone=w[0];S.px=w[1];S.py=w[2];S.msg=`Llegaste a ${ZONES[w[0]].name}.`;sfx("warp");render();return}
+if(ti.effect==="heal"){S.team.forEach(c=>{c.hp=c.maxhp;c.st=null});S.msg="El centro de curación restauró a tu equipo.";sfx("heal")}
 else if(ti.screen==="shop"){S.screen="shop";render();return}
 else if(ti.screen==="breed"){S.bsel=[];S.screen="breed";render();return}
 else if(ti.screen==="craft"){S.screen="craft";render();return}
@@ -200,7 +228,7 @@ S.bsel=[];render()};
 window.closeBreed=()=>{S.bsel=[];S.screen="map";render()};
 function stash(c){if(S.team.length<4){S.team.push(c);return"equipo"}S.box.push(c);return"base"}
 function hatchEgg(){const e=S.egg;const c=mk(e.sp,BREED.hatchLvl);c.maxhp+=e.hp;c.hp=c.maxhp;c.atk+=e.atk;c.mv=[...e.mv];
-const dest=stash(c);reg(e.sp);S.egg=null;
+const dest=stash(c);reg(e.sp);S.egg=null;sfx("hatch");
 S.msg=`¡El huevo eclosionó! Nació ${e.sp}${c.g==="M"?" ♂":" ♀"} (nv. ${BREED.hatchLvl}) con la herencia de sus padres: ${c.mv.map(m=>MOVES[m].n).join(" y ")}, +${e.hp} PS y +${e.atk} de ataque.${dest==="base"?" Fue a la base de criaturas.":""}`}
 
 /* ============================================================
@@ -239,7 +267,7 @@ return `<button class="mvbtn" onclick="buy('${k}')" ${S.coins<it.pr||owned?"disa
 <button style="margin-top:12px" onclick="exitShop()"><i class="ti ti-arrow-left" aria-hidden="true"></i> Salir de la tienda</button></div>`))}
 window.buy=k=>{const it=SHOP[k];if(S.coins<it.pr)return;
 if(it.mount){if(S.mounts[it.mount])return;S.coins-=it.pr;S.mounts[it.mount]=true}
-else{S.coins-=it.pr;if(k==="ball")S.balls++;else S.items[k]++}render()};
+else{S.coins-=it.pr;if(k==="ball")S.balls++;else S.items[k]++}sfx("buy");render()};
 window.exitShop=()=>{S.screen="map";S.msg="";render()};
 
 /* ============================================================
@@ -298,7 +326,7 @@ for(let i=0;i<EXPEDITIONS.rolls;i++){const pool=WILD[e.biome]||[];if(!pool.lengt
 const sp=SPECIES[pool[R(0,pool.length-1)]];const mat=Object.entries(MATERIALS).find(([,m])=>m.from===sp.t);
 if(mat&&Math.random()<EXPEDITIONS.matChance){S.mats[mat[0]]=(S.mats[mat[0]]||0)+1;gained[mat[1].n]=(gained[mat[1].n]||0)+1}}
 const fake={log:[]};gainXp(c,{lvl:bio.base},fake);
-const dest=stash(c);S.exp=null;
+const dest=stash(c);S.exp=null;sfx("win");
 const loot=Object.entries(gained).map(([n,q])=>`${q}× ${n}`).join(", ");
 S.msg=`¡${c.name} volvió de ${bio.n}${dest==="base"?" (fue a la base)":""}! Trajo ${coins} monedas${loot?` y ${loot}`:""}. ${fake.log.join(" ")}`}
 
@@ -321,10 +349,10 @@ return `<button class="mvbtn" onclick="buyBld('${k}')" ${owned||S.coins<b.pr?"di
 </div>
 <p style="font-size:12px;color:var(--color-text-tertiary);margin:8px 0 0">Monedas: ${S.coins}</p>
 <button style="margin-top:12px" onclick="exitCraft()"><i class="ti ti-arrow-left" aria-hidden="true"></i> Salir del taller</button></div>`))}
-window.buyBld=k=>{const b=BUILDINGS[k];if(!b||S.bld[k]||S.coins<b.pr)return;S.coins-=b.pr;S.bld[k]=true;render()};
+window.buyBld=k=>{const b=BUILDINGS[k];if(!b||S.bld[k]||S.coins<b.pr)return;S.coins-=b.pr;S.bld[k]=true;sfx("buy");render()};
 window.craft=k=>{const cost=RECIPES[k];if(!Object.entries(cost).every(([m,q])=>(S.mats[m]||0)>=q))return;
 Object.entries(cost).forEach(([m,q])=>S.mats[m]-=q);
-if(k==="ball")S.balls++;else S.items[k]++;render()};
+if(k==="ball")S.balls++;else S.items[k]++;sfx("buy");render()};
 window.exitCraft=()=>{S.screen="map";S.msg="";render()};
 
 /* ============================================================
@@ -357,19 +385,19 @@ if(b.forceSwitch){b.forceSwitch=false}else enemyTurn();render()};
 /* ============================================================
    Lógica de combate
    ============================================================ */
-function startWild(pool,lvl){const w=mk(pool[R(0,pool.length-1)],lvl);S.battle={enemy:w,log:[`¡Un ${w.name} salvaje (nv. ${w.lvl}) apareció!`],over:false,trainer:null};S.screen="battle"}
+function startWild(pool,lvl){const w=mk(pool[R(0,pool.length-1)],lvl);S.battle={enemy:w,log:[`¡Un ${w.name} salvaje (nv. ${w.lvl}) apareció!`],over:false,trainer:null};S.screen="battle";sfx("encounter")}
 function startTrainer(id){const t=TRAINERS[id];const en=mk(...t.team[0]);
-S.battle={enemy:en,log:[`¡El entrenador ${t.name} te desafía! Envía a ${en.name} (nv. ${en.lvl}).`],over:false,trainer:{id,idx:0}};S.screen="battle";render()}
+S.battle={enemy:en,log:[`¡El entrenador ${t.name} te desafía! Envía a ${en.name} (nv. ${en.lvl}).`],over:false,trainer:{id,idx:0}};S.screen="battle";sfx("encounter");render()}
 function dmg(att,move,def){const m=MOVES[move];const ef=(EFF[m.t]||{})[def.t]??1;const stab=m.t===att.t?1.3:1;
 return{d:Math.max(1,Math.round((m.p*0.4+att.atk)*ef*stab*(0.9+Math.random()*0.2)/2.2)),ef}}
 function tryStatus(m,def,b){if(m.st&&!def.st&&def.hp>0&&Math.random()<m.sc){def.st=m.st;b.log.push(STATUS[m.st].hit.replace("{n}",def.name))}}
-function playerFainted(b){const me=S.team[0];me.hp=0;me.st=null;
+function playerFainted(b){const me=S.team[0];me.hp=0;me.st=null;sfx("faint");
 if(S.team.some(c=>c.hp>0)){b.log.push(`${me.name} se debilitó.`);b.forceSwitch=true}
 else{b.log.push(`Todo tu equipo se debilitó… Volvés al centro a descansar.`);b.over=true;b.faint=true}}
-function enemyDefeated(b){const me=S.team[0],en=b.enemy;en.hp=0;b.log.push(`¡${en.name} se debilitó!`);gainXp(me,en,b);
+function enemyDefeated(b){const me=S.team[0],en=b.enemy;en.hp=0;b.log.push(`¡${en.name} se debilitó!`);sfx("faint");gainXp(me,en,b);
 if(b.trainer){const t=TRAINERS[b.trainer.id];
 if(b.trainer.idx<t.team.length-1){b.trainer.idx++;b.enemy=mk(...t.team[b.trainer.idx]);b.log.push(`${t.name} envía a ${b.enemy.name} (nv. ${b.enemy.lvl}).`)}
-else{b.log.push(`¡Venciste a ${t.name}!`);b.over=true;b.won=true}}
+else{b.log.push(`¡Venciste a ${t.name}!`);b.over=true;b.won=true;sfx("win")}}
 else{const c=en.lvl*2;S.coins+=c;b.log.push(`Ganaste ${c} monedas.`);
 const mat=Object.entries(MATERIALS).find(([,m])=>m.from===en.t);
 if(mat&&Math.random()<mat[1].rate){S.mats[mat[0]]=(S.mats[mat[0]]||0)+1;b.log.push(`Conseguiste 1 ${mat[1].n}.`)}
@@ -380,32 +408,32 @@ tick(b.enemy);if(b.enemy.hp<=0){enemyDefeated(b);return}
 tick(S.team[0]);if(S.team[0].hp<=0)playerFainted(b)}
 function enemyTurn(){const b=S.battle,me=S.team[0],en=b.enemy;if(b.over||en.hp<=0)return;
 if(en.st==="par"&&Math.random()<0.25)b.log.push(`${en.name} está paralizado y no puede moverse.`);
-else{const mvs=SPECIES[en.name].mv;const mv=mvs[R(0,mvs.length-1)];const m=MOVES[mv];const r=dmg(en,mv,me);me.hp-=r.d;
+else{const mvs=SPECIES[en.name].mv;const mv=mvs[R(0,mvs.length-1)];const m=MOVES[mv];const r=dmg(en,mv,me);me.hp-=r.d;sfx(r.ef>1?"super":"hit");
 b.log.push(`${en.name} usó ${m.n}: −${r.d} PS${r.ef>1?" (¡súper eficaz!)":r.ef<1?" (poco eficaz)":""}.`);
 if(me.hp<=0){playerFainted(b);return}
 tryStatus(m,me,b)}
 endRound(b)}
 function gainXp(me,en,b){const xp=en.lvl*9;me.xp+=xp;b.log.push(`${me.name} ganó ${xp} XP.`);
 while(me.xp>=me.next){me.xp-=me.next;me.lvl++;me.next=me.lvl*20;me.maxhp+=6;me.hp=Math.min(me.maxhp,me.hp+6);me.atk+=2;
-b.log.push(`¡${me.name} subió al nivel ${me.lvl}!`);
+b.log.push(`¡${me.name} subió al nivel ${me.lvl}!`);sfx("levelup");
 const ev=EVO[me.name];
 if(ev&&me.lvl>=ev[1]){const nn=ev[0];me.name=nn;me.maxhp+=12;me.hp+=12;me.atk+=3;me.mv=[...SPECIES[nn].mv];reg(nn);
-b.log.push(`¡¿Qué?! ¡Tu criatura evolucionó a ${nn}!`)}}}
+b.log.push(`¡¿Qué?! ¡Tu criatura evolucionó a ${nn}!`);sfx("evolve")}}}
 window.atk=i=>{const b=S.battle,me=S.team[0],en=b.enemy;b.swapMode=false;
 if(me.st==="par"&&Math.random()<0.25){b.log.push(`${me.name} está paralizado y no puede moverse.`);enemyTurn();render();return}
-const m=MOVES[me.mv[i]];const r=dmg(me,me.mv[i],en);en.hp-=r.d;
+const m=MOVES[me.mv[i]];const r=dmg(me,me.mv[i],en);en.hp-=r.d;sfx(r.ef>1?"super":"hit");
 b.log.push(`${me.name} usó ${m.n}: −${r.d} PS${r.ef>1?" (¡súper eficaz!)":r.ef<1?" (poco eficaz)":""}.`);
 if(en.hp<=0)enemyDefeated(b);
 else{tryStatus(m,en,b);enemyTurn()}render()};
 window.useB=k=>{const b=S.battle,me=S.team[0];if(S.items[k]<1)return;S.items[k]--;b.swapMode=false;
-me.hp=Math.min(me.maxhp,me.hp+(k==="p"?25:60));b.log.push(`${me.name} recuperó PS con ${k==="p"?"una poción":"una superpoción"}.`);
+me.hp=Math.min(me.maxhp,me.hp+(k==="p"?25:60));b.log.push(`${me.name} recuperó PS con ${k==="p"?"una poción":"una superpoción"}.`);sfx("heal");
 enemyTurn();render()};
 window.capture=()=>{const b=S.battle,en=b.enemy;if(b.trainer)return;
 if(S.team.length>=4&&S.box.length>=STORAGE.cap)return;S.balls--;
 const p=Math.min(.9,(1-en.hp/en.maxhp)*0.75+0.2);
-if(Math.random()<p){const dest=stash(en);reg(en.name);
+if(Math.random()<p){const dest=stash(en);reg(en.name);sfx("capture");
 b.log.push(`¡Atrapaste a ${en.name}! ${dest==="equipo"?"Se unió a tu equipo.":"Fue a la base de criaturas."}`);b.over=true;b.caught=true}
-else{b.log.push(`¡${en.name} se escapó de la esfera!`);enemyTurn()}render()};
+else{sfx("escape");b.log.push(`¡${en.name} se escapó de la esfera!`);enemyTurn()}render()};
 window.flee=()=>{const b=S.battle;if(b.trainer)return;if(Math.random()<0.7){b.log.push("Escapaste sin problemas.");b.over=true}else{b.log.push("¡No pudiste huir!");enemyTurn()}render()};
 window.endB=()=>{const b=S.battle;
 if(b.faint){S.team.forEach(c=>{c.hp=c.maxhp;c.st=null});S.zone=PLAYER.respawn[0];S.px=PLAYER.respawn[1];S.py=PLAYER.respawn[2];S.msg=`Despertaste en el centro de curación de ${ZONES[S.zone].name} con el equipo restaurado.`}
@@ -418,7 +446,7 @@ S.battle=null;S.screen="map";render()};
 /* ============================================================
    Guardado y carga
    ============================================================ */
-window.saveGame=()=>{const d={zone:S.zone,px:S.px,py:S.py,team:S.team,box:S.box,balls:S.balls,items:S.items,coins:S.coins,mats:S.mats,bld:S.bld,steps:S.steps,exp:S.exp,beaten:S.beaten,dex:S.dex,egg:S.egg,mounts:S.mounts};
+window.saveGame=()=>{const d={zone:S.zone,px:S.px,py:S.py,team:S.team,box:S.box,balls:S.balls,items:S.items,coins:S.coins,mats:S.mats,bld:S.bld,steps:S.steps,exp:S.exp,beaten:S.beaten,dex:S.dex,egg:S.egg,mounts:S.mounts,snd:S.snd};
 const code=btoa(unescape(encodeURIComponent(JSON.stringify(d))));const inp=document.getElementById("savecode");inp.value=code;inp.select();
 let msg="Código generado. Copialo y guardalo en un lugar seguro.";
 if(navigator.clipboard){navigator.clipboard.writeText(code).then(()=>{document.getElementById("msg").textContent="Código de guardado copiado al portapapeles."}).catch(()=>{})}
@@ -454,6 +482,7 @@ S.beaten={};Object.keys(TRAINERS).forEach(k=>{if(d.beaten&&d.beaten[k])S.beaten[
 S.dex={};Object.keys(SPECIES).forEach(k=>{if(d.dex&&d.dex[k])S.dex[k]=true});
 S.team.concat(S.box).forEach(c=>reg(c.name));
 S.mounts=Object.fromEntries(MOUNT_KEYS.map(k=>[k,!!(d.mounts&&d.mounts[k]===true)]));
+S.snd=d.snd!==false;
 S.egg=null;
 if(d.egg&&SPECIES[d.egg.sp]){const emv=(Array.isArray(d.egg.mv)?d.egg.mv.filter(m=>MOVES[m]):[]).slice(0,2);
 S.egg={sp:d.egg.sp,mv:emv.length?emv:[...SPECIES[d.egg.sp].mv],hp:cleanNum(d.egg.hp,0,0,99),atk:cleanNum(d.egg.atk,0,0,99),steps:cleanNum(d.egg.steps,0,0,999)}}

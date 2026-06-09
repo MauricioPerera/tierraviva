@@ -116,6 +116,23 @@ buildings:
   invernadero: { n: Invernadero, ic: ti-leaf, pr: 150, mat: savia, every: 12 }
   esquiladora: { n: Esquiladora, ic: ti-paw, pr: 150, mat: pelaje, every: 12 }
 storage: { cap: 24 }
+sfx:
+  encounter: { freq: 392, dur: 0.12 }
+  hit:       { freq: 220, dur: 0.08, type: sawtooth }
+  super:     { freq: 660, dur: 0.1 }
+  faint:     { freq: 110, dur: 0.4, type: triangle }
+  capture:   { freq: 523, dur: 0.12, freq2: 784 }
+  escape:    { freq: 330, dur: 0.15, type: sawtooth }
+  levelup:   { freq: 587, dur: 0.1, freq2: 880 }
+  evolve:    { freq: 523, dur: 0.15, freq2: 1047 }
+  heal:      { freq: 698, dur: 0.15, type: sine }
+  buy:       { freq: 784, dur: 0.07 }
+  hatch:     { freq: 659, dur: 0.12, freq2: 988 }
+  win:       { freq: 523, dur: 0.12, freq2: 1047 }
+  warp:      { freq: 494, dur: 0.1, type: sine }
+music:
+  map:    { tempo: 104, wave: triangle, vol: 0.025, loop: true, notes: [60, 0, 64, 0, 67, 0, 64, 0, 69, 0, 67, 0, 64, 62, 60, 0, 62, 0, 65, 0, 69, 0, 65, 0, 67, 0, 64, 0, 62, 0, 60, 0] }
+  battle: { tempo: 148, wave: square, vol: 0.02, loop: true, notes: [57, 57, 0, 60, 57, 0, 62, 63, 62, 60, 57, 0, 55, 0, 57, 0] }
 balance: { hpMin: 30, hpMax: 70, atkMin: 8, atkMax: 18, budgetMax: 110, powerMin: 30, powerMax: 60, scMax: 0.4, lvlMax: 20, maxMoves: 4 }
 breeding: { eggSteps: 24, hatchLvl: 5, hpDiv: 40, atkDiv: 20 }
 player: { start: [pueblo, 6, 4], respawn: [pueblo, 3, 3], balls: 8, potions: 3, supers: 1 }
@@ -215,6 +232,10 @@ El mundo: cada zona tiene nombre, mapa ASCII (filas de igual ancho) y `warps` (`
 ## Breeding & Player
 
 `breeding`: pasos de incubación, nivel de eclosión y divisores de herencia de stats (`(PS_a+PS_b)/hpDiv`, `(atk_a+atk_b)/atkDiv`). `player`: zona/posición inicial, punto de reaparición al debilitarse e inventario de arranque.
+
+## Audio
+
+Sonido sintetizado con Web Audio, sin assets. `sfx`: tonos por evento del motor (`freq` en Hz, `dur` en segundos, `type` opcional de onda, `freq2` opcional para un segundo tono encadenado); el lint exige las claves que el motor referencia. `music`: temas como secuencias de notas MIDI en corcheas (`0` = silencio), con `tempo`, onda, volumen y `loop`; se requieren `map` (mapa y pantallas) y `battle` (combate). El botón de altavoz silencia todo.
 
 ## Balance
 

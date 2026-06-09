@@ -78,6 +78,23 @@ d = clone();
 d.descriptions.Fantasmux = "Una descripción de nadie.";
 ok(hasError(d, "species-desc"), "descripción de especie inexistente rechazada");
 
+// Audio: claves requeridas por el motor y valores sanos
+d = clone();
+delete d.sfx.capture;
+ok(hasError(d, "sfx-valid"), "sfx requerido por el motor faltante rechazado");
+
+d = clone();
+d.sfx.hit.freq = 99999;
+ok(hasError(d, "sfx-valid"), "frecuencia fuera de rango rechazada");
+
+d = clone();
+d.music.map.notes = [60, 999];
+ok(hasError(d, "music-valid"), "nota MIDI inválida rechazada");
+
+d = clone();
+d.music.battle.vol = 0.9;
+ok(hasError(d, "music-valid"), "volumen excesivo rechazado");
+
 // La evolución que no mejora stats es warning (no bloquea, avisa)
 d = clone();
 d.species.Flaranto.hp = 30;
