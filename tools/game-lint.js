@@ -13,7 +13,7 @@ function lintGame(d) {
   const add = (level, rule, msg) => F.push({ level, rule, msg });
 
   // required-fields
-  for (const f of ['version', 'name', 'types', 'effectiveness', 'status', 'moves', 'species', 'trainers', 'shop', 'tiles', 'biomes', 'materials', 'recipes', 'expeditions', 'buildings', 'storage', 'breeding', 'player', 'zones'])
+  for (const f of ['version', 'name', 'types', 'effectiveness', 'status', 'moves', 'species', 'trainers', 'shop', 'tiles', 'biomes', 'materials', 'recipes', 'expeditions', 'buildings', 'storage', 'balance', 'breeding', 'player', 'zones'])
     if (!(f in d)) add('error', 'required-fields', 'Falta el campo obligatorio: ' + f);
 
   const types = d.types || {}, eff = d.effectiveness || {}, status = d.status || {};
@@ -200,6 +200,35 @@ function lintGame(d) {
 
   // storage-valid
   if (!((d.storage || {}).cap > 0)) add('error', 'storage-valid', 'storage.cap faltante o inválido');
+
+  // balance-valid: límites anti contenido roto (criaturas inmortales, movimientos desmedidos, jefes imposibles)
+  const bal = d.balance || {};
+  for (const k of ['hpMin', 'hpMax', 'atkMin', 'atkMax', 'budgetMax', 'powerMin', 'powerMax', 'scMax', 'lvlMax', 'maxMoves'])
+    if (!(bal[k] > 0)) add('error', 'balance-valid', 'balance.' + k + ' faltante o inválido');
+  if (bal.hpMax > 0) {
+    for (const [n, sp] of Object.entries(species)) {
+      if (sp.hp < bal.hpMin || sp.hp > bal.hpMax)
+        add('error', 'balance-species', n + ': hp ' + sp.hp + ' fuera de [' + bal.hpMin + ',' + bal.hpMax + ']');
+      if (sp.atk < bal.atkMin || sp.atk > bal.atkMax)
+        add('error', 'balance-species', n + ': atk ' + sp.atk + ' fuera de [' + bal.atkMin + ',' + bal.atkMax + ']');
+      if (sp.hp + 3 * sp.atk > bal.budgetMax)
+        add('error', 'balance-species', n + ': presupuesto hp+3×atk = ' + (sp.hp + 3 * sp.atk) + ' supera budgetMax ' + bal.budgetMax);
+      if ((sp.mv || []).length > bal.maxMoves)
+        add('error', 'balance-species', n + ': más de ' + bal.maxMoves + ' movimientos');
+      if (sp.evo && species[sp.evo] && !(species[sp.evo].hp > sp.hp && species[sp.evo].atk >= sp.atk))
+        add('warn', 'balance-species', n + ': la evolución ' + sp.evo + ' no mejora los stats');
+    }
+    for (const [k, m] of Object.entries(moves)) {
+      if (m.p < bal.powerMin || m.p > bal.powerMax)
+        add('error', 'balance-moves', k + ': potencia ' + m.p + ' fuera de [' + bal.powerMin + ',' + bal.powerMax + ']');
+      if (m.sc != null && m.sc > bal.scMax)
+        add('error', 'balance-moves', k + ': sc ' + m.sc + ' supera scMax ' + bal.scMax);
+    }
+    for (const [id, t] of Object.entries(trainers))
+      for (const mem of (t.team || []))
+        if (Array.isArray(mem) && mem[1] > bal.lvlMax)
+          add('error', 'balance-trainers', 'entrenador ' + id + ': ' + mem[0] + ' nv. ' + mem[1] + ' supera lvlMax ' + bal.lvlMax);
+  }
 
   // breeding-valid
   const br = d.breeding || {};

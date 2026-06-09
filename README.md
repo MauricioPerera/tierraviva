@@ -105,6 +105,10 @@ Flujo para crear contenido (una criatura, un bioma, una zona entera) sin tocar e
 
 `game-export.js --check` detecta drift (generado desincronizado del contrato). El motor consume `window.GAME` con **fallback embebido**: si `game-data.generated.js` falta, el juego degrada con gracia a su snapshot interno — el doble clic vía `file://` nunca se rompe. La lógica (fórmulas de daño, captura, herencia, IA) vive en el motor por diseño.
 
+## Contribuir
+
+Se aceptan criaturas, movimientos y zonas nuevas vía PR editando solo `GAME.md` — ver [CONTRIBUTING.md](CONTRIBUTING.md). El lint aplica reglas de balance duras (presupuesto de stats, potencias y probabilidades acotadas, entrenadores con nivel máximo) para que ningún aporte pueda romper el juego, y el CI bloquea el merge si algo falla.
+
 ## Estructura
 
 Sin build ni servidor (scripts clásicos, no módulos ES, justamente para que funcione con doble clic vía `file://`):

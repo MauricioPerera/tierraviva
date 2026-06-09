@@ -95,6 +95,7 @@ buildings:
   invernadero: { n: Invernadero, ic: ti-leaf, pr: 150, mat: savia, every: 12 }
   esquiladora: { n: Esquiladora, ic: ti-paw, pr: 150, mat: pelaje, every: 12 }
 storage: { cap: 24 }
+balance: { hpMin: 30, hpMax: 70, atkMin: 8, atkMax: 18, budgetMax: 110, powerMin: 30, powerMax: 60, scMax: 0.4, lvlMax: 20, maxMoves: 4 }
 breeding: { eggSteps: 24, hatchLvl: 5, hpDiv: 40, atkDiv: 20 }
 player: { start: [pueblo, 6, 4], respawn: [pueblo, 3, 3], balls: 8, potions: 3, supers: 1 }
 zones:
@@ -189,6 +190,14 @@ El mundo: cada zona tiene nombre, mapa ASCII (filas de igual ancho) y `warps` (`
 ## Breeding & Player
 
 `breeding`: pasos de incubación, nivel de eclosión y divisores de herencia de stats (`(PS_a+PS_b)/hpDiv`, `(atk_a+atk_b)/atkDiv`). `player`: zona/posición inicial, punto de reaparición al debilitarse e inventario de arranque.
+
+## Balance
+
+Límites que el lint aplica a todo el contenido para mantener el juego jugable (pensados para contribuciones):
+
+- Especies: `hp` en `[hpMin, hpMax]`, `atk` en `[atkMin, atkMax]`, y presupuesto total `hp + 3×atk ≤ budgetMax` (impide maximizar todo a la vez). Máximo `maxMoves` movimientos. Las evoluciones deben mejorar los stats de su forma base.
+- Movimientos: potencia en `[powerMin, powerMax]`; probabilidad de estado `sc ≤ scMax`.
+- Entrenadores: ningún miembro por encima de `lvlMax`.
 
 ## Do's and Don'ts
 
