@@ -107,6 +107,14 @@ Flujo para crear contenido (una criatura, un bioma, una zona entera) sin tocar e
 
 `game-export.js --check` detecta drift (generado desincronizado del contrato). El motor consume `window.GAME` con **fallback embebido**: si `game-data.generated.js` falta, el juego degrada con gracia a su snapshot interno — el doble clic vía `file://` nunca se rompe. La lógica (fórmulas de daño, captura, herencia, IA) vive en el motor por diseño.
 
+## Federación de mundos
+
+Cada fork de este repo es un **mundo independiente**: su `GAME.md` define criaturas, zonas y balance propios, y el lint garantiza que sea un mundo válido. El token `federation` declara la identidad del mundo (`worldId`) y sus pares conocidos (`peers`).
+
+Desde el botón "Federación" del mapa podés explorar cualquier mundo por URL: el cliente descarga su contrato, lo **valida con el lint en el navegador** (el linter es isomorfo), muestra qué ofrece, qué criaturas de tu equipo existen allá, y te deja viajar — abre el mundo destino con tu código de guardado en la URL, listo para cargar. Las especies que el destino no declara se descartan al cargar (saneamiento estándar); las partidas muy grandes viajan copiando el código a mano.
+
+Para sumar tu fork a la federación: publicalo en GitHub Pages, poné tu `worldId` en `GAME.md`, y agregá los mundos que conozcas en `peers` (idealmente, pedile a esos mundos vía PR que te listen de vuelta).
+
 ## Contribuir
 
 Se aceptan criaturas, movimientos y zonas nuevas vía PR editando solo `GAME.md` — ver [CONTRIBUTING.md](CONTRIBUTING.md). El lint aplica reglas de balance duras (presupuesto de stats, potencias y probabilidades acotadas, entrenadores con nivel máximo) para que ningún aporte pueda romper el juego, y el CI bloquea el merge si algo falla.

@@ -55,6 +55,7 @@ const SFX=GD.SFX||{encounter:{freq:392,dur:.12},hit:{freq:220,dur:.08,type:"sawt
 const MUSIC=GD.MUSIC||{map:{tempo:104,wave:"triangle",vol:.025,loop:true,notes:[60,0,64,0,67,0,64,0,69,0,67,0,64,62,60,0,62,0,65,0,69,0,65,0,67,0,64,0,62,0,60,0]},battle:{tempo:148,wave:"square",vol:.02,loop:true,notes:[57,57,0,60,57,0,62,63,62,60,57,0,55,0,57,0]}};
 const BREED=GD.BREED||{eggSteps:24,hatchLvl:5,hpDiv:40,atkDiv:20};
 const PLAYER=GD.PLAYER||{start:["pueblo",6,4],respawn:["pueblo",3,3],balls:8,potions:3,supers:1};
+const FED=GD.FED||{worldId:"terravia-prime",peers:{}};
 const ZONES=GD.ZONES||{
 pueblo:{name:"Pueblo Brote",map:["TTTTTTTTTTTTTT","T....h..h....T","T..P.........T","T..C......H..T","T............E","T.h.......h..T","T.....X......T","TTTTTTTTTTTTTT"],warps:{"13,4":["ruta1",1,4]}},
 ruta1:{name:"Ruta 1",map:["TTTTTTTTTTTTTT","TGGGG....GGGGT","TGGGG.3..GGGGT","T....GG......T","E..GGGGGG....E","TGGG....GGGGGT","TGGGGG..GGGGGT","TTTTTTTTTTTTTT"],warps:{"0,4":["pueblo",12,4],"13,4":["ciudad",1,4]}},
@@ -111,6 +112,7 @@ window.toggleSnd=()=>{S.snd=!S.snd;if(!S.snd)stopMusic();render()};
    Helpers de UI
    ============================================================ */
 function el(h){const d=document.createElement("div");d.innerHTML=h;return d}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 const G=document.getElementById("game");
 function badge(t){const T=TYPES[t];return `<span style="font-size:12px;padding:2px 10px;border-radius:10px;background:${T.bg};color:${T.c}"><i class="ti ${T.icon}" aria-hidden="true" style="font-size:12px"></i> ${t}</span>`}
 function stTag(c){if(!c.st)return"";const s=STATUS[c.st];return ` <span style="font-size:11px;font-weight:600;padding:1px 7px;border-radius:8px;background:${s.bg};color:${s.c}">${s.tag}</span>`}
@@ -118,7 +120,7 @@ function gSym(c){if(!c.g)return"";return ` <span style="color:${c.g==="M"?"#185F
 function hpbar(c){const pct=Math.max(0,Math.round(c.hp/c.maxhp*100));const col=pct>50?"#639922":pct>20?"#EF9F27":"#E24B4A";
 return `<div style="display:flex;align-items:center;gap:8px"><div class="hpbar"><div class="hpfill" style="width:${pct}%;background:${col}"></div></div><span style="font-size:12px;color:var(--color-text-secondary);min-width:64px;text-align:right">${Math.max(0,c.hp)}/${c.maxhp} PS</span></div>`}
 function sprite(c,size){const T=TYPES[c.t];return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${T.bg};border:2px solid ${T.c};display:flex;align-items:center;justify-content:center;flex:none"><i class="ti ${T.icon}" aria-hidden="true" style="font-size:${Math.round(size*.5)}px;color:${T.c}"></i></div>`}
-function render(){G.innerHTML="";if(S.screen==="start")rStart();else if(S.screen==="map")rMap();else if(S.screen==="shop")rShop();else if(S.screen==="dex")rDex();else if(S.screen==="breed")rBreed();else if(S.screen==="craft")rCraft();else if(S.screen==="expd")rExp();else if(S.screen==="box")rBox();else rBattle();updateMusic()}
+function render(){G.innerHTML="";if(S.screen==="start")rStart();else if(S.screen==="map")rMap();else if(S.screen==="shop")rShop();else if(S.screen==="dex")rDex();else if(S.screen==="breed")rBreed();else if(S.screen==="craft")rCraft();else if(S.screen==="expd")rExp();else if(S.screen==="box")rBox();else if(S.screen==="fed")rFed();else rBattle();updateMusic()}
 
 /* ============================================================
    Pantalla: inicio
@@ -131,8 +133,10 @@ return `<div class="card" style="text-align:center;cursor:pointer" onclick="pick
 <p style="font-size:12px;color:var(--color-text-secondary);margin:8px 0 0">PS ${sp.hp} · Ataque ${sp.atk}</p>
 <p style="font-size:12px;color:var(--color-text-tertiary);margin:6px 0 0;line-height:1.5">${DESCS[n]||""}</p>
 <button style="margin-top:10px;width:100%">Elegir</button></div>`}).join("")}</div>
-<div style="margin-top:1.5rem"><p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 6px">¿Tenés una partida guardada? Pegá el código acá:</p>
-<div class="row"><input id="loadcode" placeholder="Código de guardado" style="flex:1"/><button onclick="loadGame()">Cargar</button></div></div>`))}
+<div style="margin-top:1.5rem"><p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 6px">${hashSave()?"Llegaste desde otro mundo de la federación con tu equipo. Tocá Cargar:":"¿Tenés una partida guardada? Pegá el código acá:"}</p>
+<div class="row"><input id="loadcode" placeholder="Código de guardado" value="${esc(hashSave())}" style="flex:1"/><button onclick="loadGame()">Cargar</button></div></div>`))}
+function hashSave(){if(typeof location==="undefined"||!location.hash.startsWith("#save="))return"";
+try{return decodeURIComponent(location.hash.slice(6))}catch(e){return""}}
 window.pick=n=>{S.team=[mk(n,5)];reg(n);S.screen="map";S.msg=`¡${n} se unió! Salí de ${ZONES[S.zone].name} por el este hacia la Ruta 1. Cuidado con los entrenadores.`;render()};
 
 /* ============================================================
@@ -163,7 +167,7 @@ ${i>0?`<button style="padding:4px 8px;font-size:12px" onclick="lead(${i})" aria-
 </div></div>
 <p style="font-size:14px;margin-top:.75rem;min-height:20px" id="msg">${S.msg||""}</p>
 <p style="font-size:12px;color:var(--color-text-tertiary);margin:0 0 8px">Flechas o botones para moverte. Las casillas violetas con pin son salidas hacia otras zonas. Corazón: curación. Huevo: criadero. Herramientas: taller. Brújula: expediciones. Caja: base de criaturas. El agua y las rocas requieren montura (se venden en la tienda de Ciudad Terral).</p>
-<div class="row" style="flex-wrap:wrap"><button onclick="toggleSnd()" aria-label="${S.snd?"Silenciar":"Activar sonido"}"><i class="ti ${S.snd?"ti-volume":"ti-volume-off"}" aria-hidden="true"></i></button><button onclick="openDex()"><i class="ti ti-list-details" aria-hidden="true"></i> Criaturas ${Object.keys(S.dex).length}/${Object.keys(SPECIES).length}</button><button onclick="saveGame()"><i class="ti ti-download" aria-hidden="true"></i> Guardar partida</button><input id="savecode" readonly placeholder="El código aparece acá" style="flex:1;min-width:180px;font-size:12px"/></div>`))}
+<div class="row" style="flex-wrap:wrap"><button onclick="toggleSnd()" aria-label="${S.snd?"Silenciar":"Activar sonido"}"><i class="ti ${S.snd?"ti-volume":"ti-volume-off"}" aria-hidden="true"></i></button><button onclick="openDex()"><i class="ti ti-list-details" aria-hidden="true"></i> Criaturas ${Object.keys(S.dex).length}/${Object.keys(SPECIES).length}</button><button onclick="openFed()"><i class="ti ti-world" aria-hidden="true"></i> Federación</button><button onclick="saveGame()"><i class="ti ti-download" aria-hidden="true"></i> Guardar partida</button><input id="savecode" readonly placeholder="El código aparece acá" style="flex:1;min-width:180px;font-size:12px"/></div>`))}
 window.lead=i=>{const c=S.team.splice(i,1)[0];S.team.unshift(c);S.msg=`${c.name} ahora lidera el equipo.`;render()};
 window.potion=(i,k)=>{if(S.items[k]<1)return;S.items[k]--;const c=S.team[i];c.hp=Math.min(c.maxhp,c.hp+(k==="p"?25:60));S.msg=`${c.name} recuperó PS.`;sfx("heal");render()};
 window.mv=(dx,dy)=>{if(S.screen!=="map")return;const Z=ZONES[S.zone];const nx=S.px+dx,ny=S.py+dy;const ch=(Z.map[ny]||[])[nx];if(!ch)return;
@@ -269,6 +273,51 @@ window.buy=k=>{const it=SHOP[k];if(S.coins<it.pr)return;
 if(it.mount){if(S.mounts[it.mount])return;S.coins-=it.pr;S.mounts[it.mount]=true}
 else{S.coins-=it.pr;if(k==="ball")S.balls++;else S.items[k]++}sfx("buy");render()};
 window.exitShop=()=>{S.screen="map";S.msg="";render()};
+
+/* ============================================================
+   Pantalla: federación de mundos (forks como mundos)
+   ============================================================ */
+function fedCompat(remoteSpecies){const mine=[...new Set([...S.team,...S.box].map(c=>c.name))];
+const have=[],missing=[];mine.forEach(n=>((remoteSpecies||{})[n]?have:missing).push(n));return{have,missing}}
+function rFed(){const f=S.fedInfo;
+G.appendChild(el(`<div class="card">
+<p style="margin:0 0 4px;font-weight:500;font-size:15px"><i class="ti ti-world" aria-hidden="true"></i> Federación de mundos</p>
+<p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 12px">Cada fork de Terravia es un mundo independiente con su propio contrato. Explorá uno para validar su contenido y viajá llevando tu código de guardado. Este mundo: <b>${esc(FED.worldId)}</b>.</p>
+${Object.keys(FED.peers).length?`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin-bottom:10px">
+${Object.entries(FED.peers).map(([id,p])=>`<button class="mvbtn" onclick="fedExplore('${esc(p.url)}')"><span style="font-weight:500">${esc(p.n)}</span><br><span style="font-size:12px;color:var(--color-text-secondary)">${esc(p.url)}</span></button>`).join("")}
+</div>`:`<p style="font-size:13px;color:var(--color-text-tertiary);margin:0 0 10px">Este mundo no declara pares todavía (token federation.peers de GAME.md).</p>`}
+<div class="row" style="margin-bottom:10px"><input id="fedurl" placeholder="https://usuario.github.io/su-fork/" style="flex:1"/><button onclick="fedExplore()" ${S.fedBusy?"disabled":""}>${S.fedBusy?"Consultando…":"Explorar"}</button></div>
+${S.fedErr?`<p style="font-size:13px;color:#E24B4A;margin:0 0 10px">${esc(S.fedErr)}</p>`:""}
+${f?`<div class="card" style="margin-bottom:10px">
+<p style="margin:0 0 4px;font-weight:500">${esc(f.name)} <span style="font-weight:400;color:var(--color-text-secondary)">(${esc(f.worldId)} · v${esc(f.version)})</span></p>
+<p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 6px">${f.species} especies · ${f.zones} zonas · ${f.trainers} entrenadores · contrato: ${f.lintErrors===0?"válido ✓":`<span style="color:#E24B4A">${f.lintErrors} error(es) de lint</span>`}</p>
+<p style="font-size:13px;margin:0 0 8px">Tu equipo allá: ${f.compat.have.length?`✓ ${f.compat.have.join(", ")}`:""}${f.compat.missing.length?` <span style="color:#E24B4A">✗ ${f.compat.missing.join(", ")} (no existen en ese mundo: se descartan al cargar)</span>`:""}${!f.compat.have.length&&!f.compat.missing.length?"sin criaturas aún":""}</p>
+<button onclick="fedTravel()" ${f.lintErrors>0?"disabled":""}><i class="ti ti-plane-departure" aria-hidden="true"></i> Viajar con tu equipo</button>
+${f.lintErrors>0?`<p style="font-size:12px;color:var(--color-text-tertiary);margin:6px 0 0">No se recomienda viajar a un mundo con contrato inválido.</p>`:""}
+</div>`:""}
+<button onclick="closeFed()"><i class="ti ti-arrow-left" aria-hidden="true"></i> Volver al mapa</button></div>`))}
+window.openFed=()=>{S.screen="fed";S.fedInfo=null;S.fedErr=null;S.fedBusy=false;render()};
+window.closeFed=()=>{S.screen="map";S.fedInfo=null;S.fedErr=null;render()};
+window.fedExplore=u=>{if(S.fedBusy)return;
+u=(u||document.getElementById("fedurl").value).trim();
+if(!/^https?:\/\/.+/.test(u)){S.fedErr="Ingresá una URL válida (https://…).";S.fedInfo=null;render();return}
+if(!u.endsWith("/"))u+="/";
+if(typeof fetch!=="function"||!window.YamlMin||!window.GameLint){S.fedErr="La exploración remota no está disponible en este entorno.";render();return}
+S.fedBusy=true;S.fedErr=null;S.fedInfo=null;render();
+fetch(u+"GAME.md").then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.text()})
+.then(txt=>{const {fm}=window.YamlMin.splitFrontMatter(txt);
+if(!fm)throw new Error("El GAME.md remoto no tiene front-matter");
+const d=window.YamlMin.parseYamlSubset(fm);
+const errs=window.GameLint.lintGame(d).filter(x=>x.level==="error").length;
+S.fedInfo={url:u,name:d.name||"(sin nombre)",worldId:(d.federation||{}).worldId||"?",version:d.version??"?",
+species:Object.keys(d.species||{}).length,zones:Object.keys(d.zones||{}).length,trainers:Object.keys(d.trainers||{}).length,
+lintErrors:errs,compat:fedCompat(d.species)};
+S.fedBusy=false;render()})
+.catch(e=>{S.fedErr="No se pudo leer ese mundo: "+e.message;S.fedBusy=false;render()})};
+window.fedTravel=()=>{const f=S.fedInfo;if(!f)return;
+const code=buildSaveCode();
+window.open(f.url+(code.length<1800?"#save="+encodeURIComponent(code):""),"_blank");
+if(code.length>=1800)S.fedErr="Tu partida es muy grande para viajar por URL: copiá el código con Guardar y pegalo allá.";render()};
 
 /* ============================================================
    Pantalla: base de criaturas (almacenamiento)
@@ -446,8 +495,9 @@ S.battle=null;S.screen="map";render()};
 /* ============================================================
    Guardado y carga
    ============================================================ */
-window.saveGame=()=>{const d={zone:S.zone,px:S.px,py:S.py,team:S.team,box:S.box,balls:S.balls,items:S.items,coins:S.coins,mats:S.mats,bld:S.bld,steps:S.steps,exp:S.exp,beaten:S.beaten,dex:S.dex,egg:S.egg,mounts:S.mounts,snd:S.snd};
-const code=btoa(unescape(encodeURIComponent(JSON.stringify(d))));const inp=document.getElementById("savecode");inp.value=code;inp.select();
+function buildSaveCode(){const d={zone:S.zone,px:S.px,py:S.py,team:S.team,box:S.box,balls:S.balls,items:S.items,coins:S.coins,mats:S.mats,bld:S.bld,steps:S.steps,exp:S.exp,beaten:S.beaten,dex:S.dex,egg:S.egg,mounts:S.mounts,snd:S.snd};
+return btoa(unescape(encodeURIComponent(JSON.stringify(d))))}
+window.saveGame=()=>{const code=buildSaveCode();const inp=document.getElementById("savecode");inp.value=code;inp.select();
 let msg="Código generado. Copialo y guardalo en un lugar seguro.";
 if(navigator.clipboard){navigator.clipboard.writeText(code).then(()=>{document.getElementById("msg").textContent="Código de guardado copiado al portapapeles."}).catch(()=>{})}
 document.getElementById("msg").textContent=msg};

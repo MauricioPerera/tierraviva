@@ -835,6 +835,10 @@ window.GAME = {
     "potions": 3,
     "supers": 1
   },
+  "FED": {
+    "worldId": "terravia-prime",
+    "peers": {}
+  },
   "ZONES": {
     "pueblo": {
       "name": "Pueblo Brote",

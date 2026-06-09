@@ -1,9 +1,14 @@
-#!/usr/bin/env node
 /**
  * game-lint.js — Validación del contrato GAME.md (perfil tierraviva del Protocolo GAME).
- * Uso: node tools/game-lint.js [GAME.md]
- * Sin dependencias. Exporta lintGame(data) para reutilizar en tests.
+ * Uso CLI: node tools/game-lint.js [GAME.md]
+ * Isomorfo (Node + navegador, como yaml-min): el cliente lo usa para validar
+ * contratos de mundos remotos de la federación. Sin dependencias.
  */
+(function (factory) {
+  const api = factory();
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  if (typeof window !== 'undefined') window.GameLint = api;
+})(function () {
 const SCREENS = new Set(['shop', 'breed', 'craft', 'expd', 'box']);
 const EFFECTS = new Set(['heal']);
 
@@ -13,7 +18,7 @@ function lintGame(d) {
   const add = (level, rule, msg) => F.push({ level, rule, msg });
 
   // required-fields
-  for (const f of ['version', 'name', 'types', 'effectiveness', 'status', 'moves', 'species', 'descriptions', 'trainers', 'shop', 'tiles', 'biomes', 'materials', 'recipes', 'expeditions', 'buildings', 'storage', 'sfx', 'music', 'balance', 'breeding', 'player', 'zones'])
+  for (const f of ['version', 'name', 'types', 'effectiveness', 'status', 'moves', 'species', 'descriptions', 'trainers', 'shop', 'tiles', 'biomes', 'materials', 'recipes', 'expeditions', 'buildings', 'storage', 'sfx', 'music', 'balance', 'breeding', 'player', 'federation', 'zones'])
     if (!(f in d)) add('error', 'required-fields', 'Falta el campo obligatorio: ' + f);
 
   const types = d.types || {}, eff = d.effectiveness || {}, status = d.status || {};
@@ -264,13 +269,28 @@ function lintGame(d) {
   for (const k of ['eggSteps', 'hatchLvl', 'hpDiv', 'atkDiv'])
     if (!(br[k] > 0)) add('error', 'breeding-valid', 'breeding.' + k + ' faltante o inválido');
 
+  // federation-valid: identidad del mundo y pares conocidos
+  const fed = d.federation || {};
+  if (typeof fed.worldId !== 'string' || !/^[a-z0-9][a-z0-9-]*$/.test(fed.worldId))
+    add('error', 'federation-valid', 'federation.worldId requerido (slug minúsculas/números/guiones)');
+  for (const [id, p] of Object.entries(fed.peers || {})) {
+    if (!p || !p.n) add('error', 'federation-valid', 'peer ' + id + ' sin nombre (n)');
+    if (!p || typeof p.url !== 'string' || !/^https:\/\/.+/.test(p.url))
+      add('error', 'federation-valid', 'peer ' + id + ': url https requerida');
+    if (id === fed.worldId) add('warn', 'federation-valid', 'peer ' + id + ' apunta a este mismo mundo');
+  }
+
   return F;
 }
 
-if (require.main === module) {
+return { lintGame };
+});
+
+if (typeof require !== 'undefined' && typeof module !== 'undefined' && require.main === module) {
   const fs = require('fs');
   const path = require('path');
   const { splitFrontMatter, parseYamlSubset } = require('./yaml-min');
+  const { lintGame } = module.exports;
   const file = process.argv[2] || path.join(__dirname, '..', 'GAME.md');
   const { fm } = splitFrontMatter(fs.readFileSync(file, 'utf8'));
   if (!fm) { console.error('GAME.md sin front-matter YAML.'); process.exit(2); }
@@ -281,5 +301,3 @@ if (require.main === module) {
     `${errors} error(es), ${findings.length - errors} warning(s).`);
   process.exit(errors > 0 ? 1 : 0);
 }
-
-module.exports = { lintGame };

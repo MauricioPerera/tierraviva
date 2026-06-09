@@ -136,6 +136,9 @@ music:
 balance: { hpMin: 30, hpMax: 70, atkMin: 8, atkMax: 18, budgetMax: 110, powerMin: 30, powerMax: 60, scMax: 0.4, lvlMax: 20, maxMoves: 4 }
 breeding: { eggSteps: 24, hatchLvl: 5, hpDiv: 40, atkDiv: 20 }
 player: { start: [pueblo, 6, 4], respawn: [pueblo, 3, 3], balls: 8, potions: 3, supers: 1 }
+federation:
+  worldId: terravia-prime
+  peers: { }
 zones:
   pueblo:
     name: Pueblo Brote
@@ -244,6 +247,12 @@ Límites que el lint aplica a todo el contenido para mantener el juego jugable (
 - Especies: `hp` en `[hpMin, hpMax]`, `atk` en `[atkMin, atkMax]`, y presupuesto total `hp + 3×atk ≤ budgetMax` (impide maximizar todo a la vez). Máximo `maxMoves` movimientos. Las evoluciones deben mejorar los stats de su forma base.
 - Movimientos: potencia en `[powerMin, powerMax]`; probabilidad de estado `sc ≤ scMax`.
 - Entrenadores: ningún miembro por encima de `lvlMax`.
+
+## Federation
+
+Cada fork de este repo es un **mundo independiente** de la federación: su `GAME.md` define sus propias criaturas, zonas y balance, y el lint garantiza que sea un mundo válido. `worldId` es el identificador del mundo (slug); `peers` lista otros mundos conocidos (`{ n: nombre, url: https://... }`, la URL debe servir el juego y su `GAME.md`).
+
+Desde la pantalla "Federación" del juego se puede explorar cualquier mundo por URL: el cliente descarga su contrato, lo valida con el lint **en el navegador**, muestra qué ofrece y qué criaturas de tu equipo existen allá, y permite viajar llevando tu código de guardado (las especies que el mundo destino no declare se descartan al cargar, por el saneamiento estándar).
 
 ## Do's and Don'ts
 
