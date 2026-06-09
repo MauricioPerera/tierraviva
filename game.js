@@ -38,6 +38,8 @@ Zarzudo:"Una zarza andante que paraliza con esporas a quien intente podarla.",
 Rocaroz:"Un peñasco con carácter. Aturde a sus rivales a cabezazos y jamás retrocede.",
 Ondino:"Surfea las olas del lago sin esfuerzo. Su silbido anuncia tormenta.",
 Coralix:"Un jardín de coral en miniatura. Sus esporas adormecen hasta al pescador más paciente."};
+const ART=GD.ART||{
+Flarito:[[0,0,0,0,3,0,0,3,0,0,0,0],[0,0,0,3,3,0,0,3,3,0,0,0],[0,0,0,1,3,1,1,3,1,0,0,0],[0,0,1,1,1,1,1,1,1,1,0,0],[0,1,1,5,4,1,1,4,5,1,1,0],[0,1,1,1,1,1,1,1,1,1,1,0],[1,1,2,1,1,4,4,1,1,2,1,1],[1,2,1,1,1,1,1,1,1,1,2,1],[0,1,1,1,2,2,2,2,1,1,1,0],[0,0,1,1,1,1,1,1,1,1,0,0],[0,0,2,1,0,1,1,0,1,2,0,0],[0,0,0,0,0,0,0,0,0,0,0,0]]};
 const TRAINERS=GD.TRAINERS||{"1":{name:"Bruno",team:[["Llamiza",7],["Fumarol",9]],reward:{balls:3,p:2,s:0,c:60}},"2":{name:"Sora",team:[["Torrentin",11],["Sombrux",12]],reward:{balls:4,p:0,s:2,c:90}},"3":{name:"Lia",team:[["Hojarin",6]],reward:{balls:2,p:1,s:0,c:35}},"4":{name:"Magna",team:[["Magmoz",14],["Zarzudo",15],["Rocaroz",16]],reward:{balls:5,p:2,s:2,c:250},requires:[1,2,3],champion:true}};
 const SHOP=GD.SHOP||{ball:{n:"Esfera",pr:8,ic:"ti-circle-dot"},p:{n:"Poción (+25 PS)",pr:10,ic:"ti-flask"},s:{n:"Superpoción (+60 PS)",pr:25,ic:"ti-flask-2"},ma:{n:"Montura acuática",pr:120,ic:"ti-droplet",mount:"agua",d:"permite cruzar el agua"},mm:{n:"Montura montés",pr:160,ic:"ti-mountain",mount:"montes",d:"permite escalar rocas"}};
 const TILES=GD.TILES||{
@@ -135,7 +137,14 @@ const rgb=hex=>[parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt
 const css=a=>`rgb(${a.map(Math.round).join(",")})`;
 const base=rgb(T.c);
 const body=css(base),shade=css(base.map(v=>v*.62)),lite=css(base.map(v=>v+(255-v)*.45));
-// silueta: mitad izquierda con probabilidad según distancia al centro + columna espinal
+const art=ART[name];
+if(art){
+// retrato dibujado en el contrato: paleta semántica 0..5 según el tipo
+const pal={1:body,2:shade,3:lite,4:"#1a1a18",5:"#ffffff"};
+for(let y=0;y<N;y++)for(let x=0;x<N;x++){const v=(art[y]||[])[x];if(!v)continue;
+ctx.fillStyle=pal[v]||body;ctx.fillRect(x,y,1,1)}}
+else{
+// silueta procedural: mitad izquierda con probabilidad según distancia al centro + columna espinal
 const grid=[];
 for(let y=0;y<N;y++){grid[y]=[];
 for(let x=0;x<H;x++){
@@ -147,7 +156,7 @@ const ey=4;grid[ey][H-2]=1;
 for(let y=0;y<N;y++)for(let x=0;x<H;x++){const v=grid[y][x];if(!v)continue;
 ctx.fillStyle=v===2?shade:(y<3?lite:body);
 ctx.fillRect(x,y,1,1);ctx.fillRect(N-1-x,y,1,1)}
-ctx.fillStyle="#1a1a18";ctx.fillRect(H-2,ey,1,1);ctx.fillRect(N-H+1,ey,1,1);
+ctx.fillStyle="#1a1a18";ctx.fillRect(H-2,ey,1,1);ctx.fillRect(N-H+1,ey,1,1)}
 url=cv.toDataURL()}}}catch(e){url=null}
 PIX[key]=url;return url}
 function sprite(c,size){const T=TYPES[c.t];

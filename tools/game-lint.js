@@ -86,6 +86,15 @@ function lintGame(d) {
     if (pool.length === 0) add('error', 'biome-valid', 'bioma ' + ch + ' sin ninguna especie salvaje (habitats)');
   }
 
+  // art-valid: retratos opcionales 12×12 con paleta semántica 0..5
+  for (const [n, mat] of Object.entries(d.art || {})) {
+    if (!(n in species)) add('error', 'art-valid', 'art de especie inexistente: ' + n);
+    if (!Array.isArray(mat) || mat.length !== 12 || mat.some(r => !Array.isArray(r) || r.length !== 12))
+      add('error', 'art-valid', 'art de ' + n + ' no es una matriz 12×12');
+    else if (mat.some(r => r.some(v => !Number.isInteger(v) || v < 0 || v > 5)))
+      add('error', 'art-valid', 'art de ' + n + ' tiene valores fuera de la paleta 0..5');
+  }
+
   // trainer-valid
   for (const [id, t] of Object.entries(trainers)) {
     if (!t.name) add('error', 'trainer-valid', 'entrenador ' + id + ' sin name');

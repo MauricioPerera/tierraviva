@@ -78,6 +78,19 @@ d = clone();
 d.descriptions.Fantasmux = "Una descripción de nadie.";
 ok(hasError(d, "species-desc"), "descripción de especie inexistente rechazada");
 
+// Art: opcional pero validado
+d = clone();
+d.art.Fantasmux = Array.from({ length: 12 }, () => Array(12).fill(1));
+ok(hasError(d, "art-valid"), "art de especie inexistente rechazado");
+
+d = clone();
+d.art.Aquino = [[1, 2], [3]];
+ok(hasError(d, "art-valid"), "art con dimensiones incorrectas rechazado");
+
+d = clone();
+d.art.Brotin = Array.from({ length: 12 }, () => Array(12).fill(9));
+ok(hasError(d, "art-valid"), "art con índice fuera de paleta rechazado");
+
 // Audio: claves requeridas por el motor y valores sanos
 d = clone();
 delete d.sfx.capture;

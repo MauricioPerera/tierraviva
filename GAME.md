@@ -68,6 +68,8 @@ descriptions:
   Rocaroz: Un peñasco con carácter. Aturde a sus rivales a cabezazos y jamás retrocede.
   Ondino: Surfea las olas del lago sin esfuerzo. Su silbido anuncia tormenta.
   Coralix: Un jardín de coral en miniatura. Sus esporas adormecen hasta al pescador más paciente.
+art:
+  Flarito: [[0,0,0,0,3,0,0,3,0,0,0,0],[0,0,0,3,3,0,0,3,3,0,0,0],[0,0,0,1,3,1,1,3,1,0,0,0],[0,0,1,1,1,1,1,1,1,1,0,0],[0,1,1,5,4,1,1,4,5,1,1,0],[0,1,1,1,1,1,1,1,1,1,1,0],[1,1,2,1,1,4,4,1,1,2,1,1],[1,2,1,1,1,1,1,1,1,1,2,1],[0,1,1,1,2,2,2,2,1,1,1,0],[0,0,1,1,1,1,1,1,1,1,0,0],[0,0,2,1,0,1,1,0,1,2,0,0],[0,0,0,0,0,0,0,0,0,0,0,0]]
 trainers:
   1: { name: Bruno, team: [[Llamiza, 7], [Fumarol, 9]], reward: { balls: 3, p: 2, s: 0, c: 60 } }
   2: { name: Sora, team: [[Torrentin, 11], [Sombrux, 12]], reward: { balls: 4, p: 0, s: 2, c: 90 } }
@@ -201,6 +203,10 @@ Las 20 especies. `starter: true` las ofrece la pantalla inicial; `evo`/`evoLvl` 
 ## Descriptions
 
 Una línea de lore por especie, mostrada en la lista de criaturas (para las capturadas) y en la selección inicial. Va en bloque propio —no dentro de `species`— porque en los valores de bloque las comas son seguras, a diferencia de los mapas de flujo. El lint exige descripción para toda especie.
+
+## Art
+
+Retratos dibujados a mano, **opcionales**: las especies sin entrada acá usan el pixel art procedural (silueta determinista por nombre). Cada entrada es una matriz 12×12 de índices con paleta semántica fija derivada del tipo de la especie: `0` transparente, `1` color del tipo, `2` sombra, `3` claro, `4` oscuro (ojos/contorno), `5` blanco. El lint valida dimensiones, valores y que la especie exista. Flarito sirve de ejemplo de referencia.
 
 ## Trainers
 

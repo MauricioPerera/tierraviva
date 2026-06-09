@@ -21,7 +21,9 @@
   Rocopa: Un topo de roca que colecciona piedritas brillantes, una por cada túnel terminado.
 ```
 
-3. **Validá y regenerá** (solo necesitás Node, sin `npm install`):
+3. **(Opcional) Dibujale un retrato** en el bloque `art`: matriz 12×12 con paleta semántica según su tipo — `0` transparente, `1` color del tipo, `2` sombra, `3` claro, `4` oscuro (ojos/contorno), `5` blanco. Sin entrada, recibe un pixel art procedural automático. Mirá `Flarito` como referencia.
+
+4. **Validá y regenerá** (solo necesitás Node, sin `npm install`):
 
 ```
 node tools/game-lint.js        # valida referencias y balance
@@ -29,7 +31,7 @@ node tools/game-export.js      # regenera game-data.generated.js (commitealo)
 node tests/run.js              # suite completa
 ```
 
-4. **Abrí el PR.** El CI corre lint + drift + tests; el merge se bloquea si algo falla. Si te olvidás de regenerar el generado, el chequeo de drift te lo va a decir.
+5. **Abrí el PR.** El CI corre lint + drift + tests; el merge se bloquea si algo falla. Si te olvidás de regenerar el generado, el chequeo de drift te lo va a decir.
 
 ## Reglas de balance (las aplica el lint, no son opinables en el PR)
 
