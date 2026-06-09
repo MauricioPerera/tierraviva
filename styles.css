@@ -35,10 +35,34 @@ button:disabled{opacity:.45;cursor:not-allowed}
 input{font-family:inherit;font-size:14px;color:var(--color-text-primary);background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:8px 12px;height:36px}
 input:focus{outline:none;border-color:var(--color-border-secondary)}
 .btn-mv{width:44px;height:40px;font-size:16px;padding:0}
-.tile{width:100%;aspect-ratio:1;border-radius:3px;display:flex;align-items:center;justify-content:center}
+.tile{width:100%;aspect-ratio:1;border-radius:3px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+/* Texturas por tipo de casilla (el color base sigue viniendo del contrato) */
+.tile[data-t="G"]{background-image:repeating-linear-gradient(115deg,rgba(255,255,255,.08) 0 2px,transparent 2px 5px)}
+.tile[data-t="B"]{background-image:repeating-linear-gradient(65deg,rgba(0,0,0,.10) 0 2px,transparent 2px 6px)}
+.tile[data-t="T"]{box-shadow:inset 0 -3px rgba(0,0,0,.22),inset 0 2px rgba(255,255,255,.06)}
+.tile[data-t="M"],.tile[data-t="R"]{background-image:repeating-linear-gradient(45deg,rgba(0,0,0,.08) 0 3px,transparent 3px 7px);box-shadow:inset 0 -2px rgba(0,0,0,.15)}
+.tile[data-t="A"]{background-image:radial-gradient(circle at 30% 30%,rgba(255,255,255,.30),transparent 45%),radial-gradient(circle at 72% 75%,rgba(255,255,255,.18),transparent 40%);animation:water 3.2s ease-in-out infinite}
+.tile[data-t="h"]{box-shadow:inset 0 -3px rgba(0,0,0,.18),inset 0 1px rgba(255,255,255,.25)}
+.tile[data-t="C"],.tile[data-t="S"],.tile[data-t="H"],.tile[data-t="W"],.tile[data-t="X"],.tile[data-t="P"]{box-shadow:inset 0 0 0 1px rgba(0,0,0,.14),inset 0 -2px rgba(0,0,0,.10)}
+.tile[data-t="E"] i{animation:pin 1.6s ease-in-out infinite}
+@keyframes water{0%,100%{filter:brightness(1)}50%{filter:brightness(1.09)}}
+@keyframes pin{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+/* Feedback animado */
+.pc{display:inline-flex;animation:hop .22s ease-out}
+@keyframes hop{from{transform:translateY(-4px)}to{transform:translateY(0)}}
+.fade{animation:fadein .18s ease-out}
+@keyframes fadein{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+.hpfill.crit{animation:critp 1s ease-in-out infinite}
+@keyframes critp{50%{opacity:.5}}
+.shake{animation:shake .3s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}50%{transform:translateX(4px)}75%{transform:translateX(-3px)}}
+.faintfx{animation:faintfx .55s ease-in forwards}
+@keyframes faintfx{to{opacity:.25;transform:translateY(8px)}}
+.plat-sh{width:46px;height:9px;border-radius:50%;background:radial-gradient(ellipse,rgba(0,0,0,.20),transparent 70%);margin-top:-3px}
 .hpbar{height:8px;border-radius:4px;background:var(--color-background-secondary);overflow:hidden;flex:1}
 .hpfill{height:100%;border-radius:4px;transition:width .3s}
 .mvbtn{padding:10px 12px;text-align:left}
 .card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem}
 .row{display:flex;gap:10px;align-items:center}
-@media (prefers-reduced-motion: reduce){.hpfill{transition:none}button:active{transform:none}}
+@media (prefers-reduced-motion: reduce){.hpfill{transition:none}button:active{transform:none}
+.tile[data-t="A"],.tile[data-t="E"] i,.pc,.fade,.hpfill.crit,.shake,.faintfx{animation:none}}

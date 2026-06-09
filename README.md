@@ -8,6 +8,8 @@ Abrí `index.html` en cualquier navegador moderno. No requiere servidor ni insta
 
 Controles: flechas del teclado o los botones en pantalla para moverte. Todo lo demás es por clic.
 
+Los retratos de las criaturas son **pixel art procedural** generado en el navegador: una silueta determinista por especie (simetría especular, ojos, paleta según su tipo), sin un solo archivo de imagen. El mapa tiene texturas y animaciones por CSS (agua ondulante, salidas que laten, salto al caminar) y el combate muestra sacudidas al recibir daño, desmayos y barras de PS que pulsan en estado crítico — todo respeta `prefers-reduced-motion`.
+
 Hay música y efectos de sonido sintetizados con Web Audio (sin archivos de audio): tema de mapa, tema de batalla y tonos por evento (golpes, capturas, subidas de nivel, etc.), todos declarados en el contrato. El botón de altavoz del mapa silencia todo; la preferencia viaja en el código de guardado. Por política de los navegadores, el audio arranca con tu primera interacción.
 
 ## Mecánicas

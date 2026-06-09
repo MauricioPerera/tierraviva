@@ -118,9 +118,45 @@ function badge(t){const T=TYPES[t];return `<span style="font-size:12px;padding:2
 function stTag(c){if(!c.st)return"";const s=STATUS[c.st];return ` <span style="font-size:11px;font-weight:600;padding:1px 7px;border-radius:8px;background:${s.bg};color:${s.c}">${s.tag}</span>`}
 function gSym(c){if(!c.g)return"";return ` <span style="color:${c.g==="M"?"#185FA5":"#C2417A"};font-weight:600" aria-label="${c.g==="M"?"macho":"hembra"}">${c.g==="M"?"♂":"♀"}</span>`}
 function hpbar(c){const pct=Math.max(0,Math.round(c.hp/c.maxhp*100));const col=pct>50?"#639922":pct>20?"#EF9F27":"#E24B4A";
-return `<div style="display:flex;align-items:center;gap:8px"><div class="hpbar"><div class="hpfill" style="width:${pct}%;background:${col}"></div></div><span style="font-size:12px;color:var(--color-text-secondary);min-width:64px;text-align:right">${Math.max(0,c.hp)}/${c.maxhp} PS</span></div>`}
-function sprite(c,size){const T=TYPES[c.t];return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${T.bg};border:2px solid ${T.c};display:flex;align-items:center;justify-content:center;flex:none"><i class="ti ${T.icon}" aria-hidden="true" style="font-size:${Math.round(size*.5)}px;color:${T.c}"></i></div>`}
-function render(){G.innerHTML="";if(S.screen==="start")rStart();else if(S.screen==="map")rMap();else if(S.screen==="shop")rShop();else if(S.screen==="dex")rDex();else if(S.screen==="breed")rBreed();else if(S.screen==="craft")rCraft();else if(S.screen==="expd")rExp();else if(S.screen==="box")rBox();else if(S.screen==="fed")rFed();else rBattle();updateMusic()}
+return `<div style="display:flex;align-items:center;gap:8px"><div class="hpbar"><div class="hpfill${pct<=20?" crit":""}" style="width:${pct}%;background:${col}"></div></div><span style="font-size:12px;color:var(--color-text-secondary);min-width:64px;text-align:right">${Math.max(0,c.hp)}/${c.maxhp} PS</span></div>`}
+/* Pixel art procedural: silueta determinista por especie (hash del nombre),
+   simetría especular, paleta del tipo. Sin archivos de imagen. */
+const PIX={};
+function pixURL(name,t){const key=name+"|"+t;if(key in PIX)return PIX[key];
+let url=null;
+try{const cv=document.createElement("canvas");
+if(cv&&typeof cv.getContext==="function"){
+const N=12,H=6;cv.width=N;cv.height=N;const ctx=cv.getContext("2d");
+if(ctx){
+let h=5381;for(const ch of key)h=(h*33+ch.charCodeAt(0))>>>0;
+let s=h||1;const rnd=()=>{s|=0;s=(s+0x6D2B79F5)|0;let x=Math.imul(s^s>>>15,1|s);x=(x+Math.imul(x^x>>>7,61|x))^x;return((x^x>>>14)>>>0)/4294967296};
+const T=TYPES[t]||TYPES.normal;
+const rgb=hex=>[parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)];
+const css=a=>`rgb(${a.map(Math.round).join(",")})`;
+const base=rgb(T.c);
+const body=css(base),shade=css(base.map(v=>v*.62)),lite=css(base.map(v=>v+(255-v)*.45));
+// silueta: mitad izquierda con probabilidad según distancia al centro + columna espinal
+const grid=[];
+for(let y=0;y<N;y++){grid[y]=[];
+for(let x=0;x<H;x++){
+const dx=(H-1-x)/H,dy=(y-N/2+.5)/(N/2);
+const p=Math.max(0,.95-Math.sqrt(dx*dx+dy*dy*1.15));
+grid[y][x]=rnd()<p*1.25?(rnd()<.3?2:1):0}}
+for(let y=2;y<N-2;y++)grid[y][H-1]=grid[y][H-1]||1;
+const ey=4;grid[ey][H-2]=1;
+for(let y=0;y<N;y++)for(let x=0;x<H;x++){const v=grid[y][x];if(!v)continue;
+ctx.fillStyle=v===2?shade:(y<3?lite:body);
+ctx.fillRect(x,y,1,1);ctx.fillRect(N-1-x,y,1,1)}
+ctx.fillStyle="#1a1a18";ctx.fillRect(H-2,ey,1,1);ctx.fillRect(N-H+1,ey,1,1);
+url=cv.toDataURL()}}}catch(e){url=null}
+PIX[key]=url;return url}
+function sprite(c,size){const T=TYPES[c.t];
+const url=c.name?pixURL(c.name,c.t):null;
+if(url)return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${T.bg};display:flex;align-items:center;justify-content:center;flex:none"><img src="${url}" alt="" width="${size}" height="${size}" style="image-rendering:pixelated;width:86%;height:86%;display:block"></div>`;
+return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${T.bg};border:2px solid ${T.c};display:flex;align-items:center;justify-content:center;flex:none"><i class="ti ${T.icon}" aria-hidden="true" style="font-size:${Math.round(size*.5)}px;color:${T.c}"></i></div>`}
+function render(){G.innerHTML="";if(S.screen==="start")rStart();else if(S.screen==="map")rMap();else if(S.screen==="shop")rShop();else if(S.screen==="dex")rDex();else if(S.screen==="breed")rBreed();else if(S.screen==="craft")rCraft();else if(S.screen==="expd")rExp();else if(S.screen==="box")rBox();else if(S.screen==="fed")rFed();else rBattle();
+if(render.last!==S.screen&&G.firstChild&&G.firstChild.classList)G.firstChild.classList.add("fade");
+render.last=S.screen;updateMusic()}
 
 /* ============================================================
    Pantalla: inicio
@@ -128,7 +164,7 @@ function render(){G.innerHTML="";if(S.screen==="start")rStart();else if(S.screen
 function rStart(){G.appendChild(el(`<p style="font-size:14px;color:var(--color-text-secondary);margin:0 0 1rem">Bienvenido a Terravia. Elegí tu criatura inicial:</p>
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">${STARTERS.map(n=>{const sp=SPECIES[n];
 return `<div class="card" style="text-align:center;cursor:pointer" onclick="pick('${n}')">
-<div style="display:flex;justify-content:center;margin-bottom:10px">${sprite({t:sp.t},56)}</div>
+<div style="display:flex;justify-content:center;margin-bottom:10px">${sprite({name:n,t:sp.t},56)}</div>
 <p style="font-weight:500;margin:0 0 6px">${n}${EVO[n]?` → ${EVO[n][0]} (nv. ${EVO[n][1]})`:""}</p>${badge(sp.t)}
 <p style="font-size:12px;color:var(--color-text-secondary);margin:8px 0 0">PS ${sp.hp} · Ataque ${sp.atk}</p>
 <p style="font-size:12px;color:var(--color-text-tertiary);margin:6px 0 0;line-height:1.5">${DESCS[n]||""}</p>
@@ -150,8 +186,9 @@ function rMap(){const Z=ZONES[S.zone];
 let grid=`<p style="margin:0 0 6px;font-size:14px;font-weight:500"><i class="ti ti-map-pin" aria-hidden="true"></i> ${Z.name}</p>
 <div style="display:grid;grid-template-columns:repeat(${Z.map[0].length},1fr);gap:2px;background:var(--color-background-secondary);padding:6px;border-radius:var(--border-radius-md)">`;
 Z.map.forEach((row,y)=>row.forEach((ch,x)=>{const t=tileInfo(ch);const here=x===S.px&&y===S.py;
-const inner=here?`<i class="ti ti-user" aria-hidden="true" style="font-size:13px;color:#26215C"></i>`:t.icon?`<i class="ti ${t.icon}" aria-hidden="true" style="font-size:11px;color:${t.ic}"></i>`:"";
-grid+=`<div class="tile" style="background:${here?"#CECBF6":t.bg}">${inner}</div>`}));grid+="</div>";
+const inner=here?`<span class="pc"><i class="ti ti-user" aria-hidden="true" style="font-size:13px;color:#26215C"></i></span>`:t.icon?`<i class="ti ${t.icon}" aria-hidden="true" style="font-size:11px;color:${t.ic}"></i>`:"";
+const v="GBMT".includes(ch)&&!here?`;filter:brightness(${(.975+((x*7+y*13)%3)*.025).toFixed(3)})`:"";
+grid+=`<div class="tile" data-t="${ch}" style="background-color:${here?"#CECBF6":t.bg}${v}">${inner}</div>`}));grid+="</div>";
 G.appendChild(el(`${grid}
 <div style="display:flex;gap:1.5rem;align-items:flex-start;margin-top:1rem;flex-wrap:wrap">
 <div style="display:grid;grid-template-columns:repeat(3,44px);gap:4px">
@@ -248,7 +285,7 @@ if(!S.dex[n])return `<div class="card" style="padding:10px;text-align:center;opa
 <div style="display:flex;justify-content:center;margin-bottom:6px"><div style="width:40px;height:40px;border-radius:50%;background:var(--color-background-secondary);border:2px solid var(--color-border-secondary);display:flex;align-items:center;justify-content:center"><i class="ti ti-question-mark" aria-hidden="true" style="font-size:20px;color:var(--color-text-tertiary)"></i></div></div>
 <p style="margin:0;font-size:13px;font-weight:500;color:var(--color-text-tertiary)">#${num} ???</p></div>`;
 return `<div class="card" style="padding:10px;text-align:center">
-<div style="display:flex;justify-content:center;margin-bottom:6px">${sprite({t:sp.t},40)}</div>
+<div style="display:flex;justify-content:center;margin-bottom:6px">${sprite({name:n,t:sp.t},40)}</div>
 <p style="margin:0 0 4px;font-size:13px;font-weight:500">#${num} ${n}</p>${badge(sp.t)}
 <p style="font-size:11px;color:var(--color-text-secondary);margin:6px 0 0">PS ${sp.hp} · Ataque ${sp.atk}<br>${sp.mv.map(m=>MOVES[m].n).join(" · ")}</p>
 <p style="font-size:11px;color:var(--color-text-tertiary);margin:6px 0 0;line-height:1.5;text-align:left">${DESCS[n]||""}</p></div>`}).join("")}
@@ -408,6 +445,9 @@ window.exitCraft=()=>{S.screen="map";S.msg="";render()};
    Pantalla: combate
    ============================================================ */
 function rBattle(){const b=S.battle,me=S.team[0],en=b.enemy;const tn=b.trainer?TRAINERS[b.trainer.id].name:null;
+const fx=b.fx;b.fx=null;
+const fxCls=who=>fx===who?"shake":fx===who+"Faint"?"faintfx":"";
+const spr=(c,sz)=>`<div style="display:flex;flex-direction:column;align-items:center;flex:none">${sprite(c,sz)}<div class="plat-sh"></div></div>`;
 let actions="";
 if(b.over)actions=`<button onclick="endB()" style="width:100%"><i class="ti ti-arrow-left" aria-hidden="true"></i> Volver al mapa</button>`;
 else if(b.forceSwitch)actions=`<p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 8px">Elegí quién sigue:</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px">${S.team.map((c,i)=>c.hp>0?`<button class="mvbtn" onclick="swap(${i})"><span style="font-weight:500">${c.name}</span><br><span style="font-size:12px;color:var(--color-text-secondary)">nv. ${c.lvl} · ${c.hp}/${c.maxhp} PS</span></button>`:"").join("")}</div>`;
@@ -421,9 +461,9 @@ ${S.team.length>1?`<button class="mvbtn" onclick="showSwap()"><span style="font-
 </div>${b.swapMode?`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:8px">${S.team.map((c,i)=>i>0&&c.hp>0?`<button class="mvbtn" onclick="swap(${i})"><span style="font-weight:500">→ ${c.name}</span><br><span style="font-size:12px;color:var(--color-text-secondary)">nv. ${c.lvl} · ${c.hp}/${c.maxhp} PS</span></button>`:"").join("")}</div>`:""}`;
 G.appendChild(el(`<div class="card">
 ${tn?`<p style="margin:0 0 10px;font-size:13px;color:var(--color-text-secondary)"><i class="ti ti-swords" aria-hidden="true"></i> Duelo contra ${tn} (criatura ${b.trainer.idx+1}/${TRAINERS[b.trainer.id].team.length})</p>`:""}
-<div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap">
-<div style="flex:1;min-width:200px"><div class="row">${sprite(en,48)}<div style="flex:1"><p style="margin:0;font-weight:500;font-size:15px">${en.name}${tn?"":" salvaje"} <span style="font-weight:400;color:var(--color-text-secondary)">nv. ${en.lvl}</span> ${badge(en.t)}${stTag(en)}</p>${hpbar(en)}</div></div></div>
-<div style="flex:1;min-width:200px"><div class="row">${sprite(me,48)}<div style="flex:1"><p style="margin:0;font-weight:500;font-size:15px">${me.name} <span style="font-weight:400;color:var(--color-text-secondary)">nv. ${me.lvl}</span> ${badge(me.t)}${stTag(me)}</p>${hpbar(me)}</div></div></div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div class="${fxCls("en")}" style="align-self:flex-end;width:min(380px,100%)"><div class="row">${spr(en,52)}<div style="flex:1"><p style="margin:0;font-weight:500;font-size:15px">${en.name}${tn?"":" salvaje"} <span style="font-weight:400;color:var(--color-text-secondary)">nv. ${en.lvl}</span> ${badge(en.t)}${stTag(en)}</p>${hpbar(en)}</div></div></div>
+<div class="${fxCls("me")}" style="align-self:flex-start;width:min(380px,100%)"><div class="row">${spr(me,52)}<div style="flex:1"><p style="margin:0;font-weight:500;font-size:15px">${me.name} <span style="font-weight:400;color:var(--color-text-secondary)">nv. ${me.lvl}</span> ${badge(me.t)}${stTag(me)}</p>${hpbar(me)}</div></div></div>
 </div>
 <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 14px;margin:14px 0;font-size:13px;line-height:1.6">${b.log.slice(-5).map(l=>`<p style="margin:0">${l}</p>`).join("")}</div>
 ${actions}</div>`))}
@@ -440,10 +480,10 @@ S.battle={enemy:en,log:[`¡El entrenador ${t.name} te desafía! Envía a ${en.na
 function dmg(att,move,def){const m=MOVES[move];const ef=(EFF[m.t]||{})[def.t]??1;const stab=m.t===att.t?1.3:1;
 return{d:Math.max(1,Math.round((m.p*0.4+att.atk)*ef*stab*(0.9+Math.random()*0.2)/2.2)),ef}}
 function tryStatus(m,def,b){if(m.st&&!def.st&&def.hp>0&&Math.random()<m.sc){def.st=m.st;b.log.push(STATUS[m.st].hit.replace("{n}",def.name))}}
-function playerFainted(b){const me=S.team[0];me.hp=0;me.st=null;sfx("faint");
+function playerFainted(b){const me=S.team[0];me.hp=0;me.st=null;sfx("faint");b.fx="meFaint";
 if(S.team.some(c=>c.hp>0)){b.log.push(`${me.name} se debilitó.`);b.forceSwitch=true}
 else{b.log.push(`Todo tu equipo se debilitó… Volvés al centro a descansar.`);b.over=true;b.faint=true}}
-function enemyDefeated(b){const me=S.team[0],en=b.enemy;en.hp=0;b.log.push(`¡${en.name} se debilitó!`);sfx("faint");gainXp(me,en,b);
+function enemyDefeated(b){const me=S.team[0],en=b.enemy;en.hp=0;b.log.push(`¡${en.name} se debilitó!`);sfx("faint");b.fx="enFaint";gainXp(me,en,b);
 if(b.trainer){const t=TRAINERS[b.trainer.id];
 if(b.trainer.idx<t.team.length-1){b.trainer.idx++;b.enemy=mk(...t.team[b.trainer.idx]);b.log.push(`${t.name} envía a ${b.enemy.name} (nv. ${b.enemy.lvl}).`)}
 else{b.log.push(`¡Venciste a ${t.name}!`);b.over=true;b.won=true;sfx("win")}}
@@ -457,7 +497,7 @@ tick(b.enemy);if(b.enemy.hp<=0){enemyDefeated(b);return}
 tick(S.team[0]);if(S.team[0].hp<=0)playerFainted(b)}
 function enemyTurn(){const b=S.battle,me=S.team[0],en=b.enemy;if(b.over||en.hp<=0)return;
 if(en.st==="par"&&Math.random()<0.25)b.log.push(`${en.name} está paralizado y no puede moverse.`);
-else{const mvs=SPECIES[en.name].mv;const mv=mvs[R(0,mvs.length-1)];const m=MOVES[mv];const r=dmg(en,mv,me);me.hp-=r.d;sfx(r.ef>1?"super":"hit");
+else{const mvs=SPECIES[en.name].mv;const mv=mvs[R(0,mvs.length-1)];const m=MOVES[mv];const r=dmg(en,mv,me);me.hp-=r.d;sfx(r.ef>1?"super":"hit");b.fx="me";
 b.log.push(`${en.name} usó ${m.n}: −${r.d} PS${r.ef>1?" (¡súper eficaz!)":r.ef<1?" (poco eficaz)":""}.`);
 if(me.hp<=0){playerFainted(b);return}
 tryStatus(m,me,b)}
@@ -470,7 +510,7 @@ if(ev&&me.lvl>=ev[1]){const nn=ev[0];me.name=nn;me.maxhp+=12;me.hp+=12;me.atk+=3
 b.log.push(`¡¿Qué?! ¡Tu criatura evolucionó a ${nn}!`);sfx("evolve")}}}
 window.atk=i=>{const b=S.battle,me=S.team[0],en=b.enemy;b.swapMode=false;
 if(me.st==="par"&&Math.random()<0.25){b.log.push(`${me.name} está paralizado y no puede moverse.`);enemyTurn();render();return}
-const m=MOVES[me.mv[i]];const r=dmg(me,me.mv[i],en);en.hp-=r.d;sfx(r.ef>1?"super":"hit");
+const m=MOVES[me.mv[i]];const r=dmg(me,me.mv[i],en);en.hp-=r.d;sfx(r.ef>1?"super":"hit");b.fx="en";
 b.log.push(`${me.name} usó ${m.n}: −${r.d} PS${r.ef>1?" (¡súper eficaz!)":r.ef<1?" (poco eficaz)":""}.`);
 if(en.hp<=0)enemyDefeated(b);
 else{tryStatus(m,en,b);enemyTurn()}render()};
