@@ -1,0 +1,44 @@
+:root{
+  --color-background-primary:#ffffff;
+  --color-background-secondary:#f3f1ec;
+  --color-background-tertiary:#eae7e0;
+  --color-text-primary:#1a1a18;
+  --color-text-secondary:#5f5e5a;
+  --color-text-tertiary:#8a8983;
+  --color-border-tertiary:rgba(60,58,52,.15);
+  --color-border-secondary:rgba(60,58,52,.3);
+  --border-radius-md:8px;
+  --border-radius-lg:12px;
+  --font-sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --color-background-primary:#23221f;
+    --color-background-secondary:#2e2d29;
+    --color-background-tertiary:#1a1917;
+    --color-text-primary:#ece9e2;
+    --color-text-secondary:#a8a69f;
+    --color-text-tertiary:#7c7a74;
+    --color-border-tertiary:rgba(235,232,225,.15);
+    --color-border-secondary:rgba(235,232,225,.3);
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--color-background-tertiary);color:var(--color-text-primary);font-family:var(--font-sans);font-size:16px;line-height:1.6}
+main{max-width:720px;margin:0 auto;padding:2rem 1rem}
+h1{font-size:22px;font-weight:500;margin:0 0 .25rem}
+.tagline{font-size:14px;color:var(--color-text-secondary);margin:0 0 1.5rem}
+button{font-family:inherit;font-size:14px;color:var(--color-text-primary);background:transparent;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:8px 14px;cursor:pointer;transition:background .15s}
+button:hover:not(:disabled){background:var(--color-background-secondary)}
+button:active:not(:disabled){transform:scale(.98)}
+button:disabled{opacity:.45;cursor:not-allowed}
+input{font-family:inherit;font-size:14px;color:var(--color-text-primary);background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:8px 12px;height:36px}
+input:focus{outline:none;border-color:var(--color-border-secondary)}
+.btn-mv{width:44px;height:40px;font-size:16px;padding:0}
+.tile{width:100%;aspect-ratio:1;border-radius:3px;display:flex;align-items:center;justify-content:center}
+.hpbar{height:8px;border-radius:4px;background:var(--color-background-secondary);overflow:hidden;flex:1}
+.hpfill{height:100%;border-radius:4px;transition:width .3s}
+.mvbtn{padding:10px 12px;text-align:left}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem}
+.row{display:flex;gap:10px;align-items:center}
+@media (prefers-reduced-motion: reduce){.hpfill{transition:none}button:active{transform:none}}

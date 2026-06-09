@@ -1,0 +1,20 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Lint del contrato
+        run: node tools/game-lint.js
+      - name: Drift del generado
+        run: node tools/game-export.js --check
+      - name: Suite de tests
+        run: node tests/run.js
