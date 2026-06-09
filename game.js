@@ -58,6 +58,7 @@ const MUSIC=GD.MUSIC||{map:{tempo:104,wave:"triangle",vol:.025,loop:true,notes:[
 const BREED=GD.BREED||{eggSteps:24,hatchLvl:5,hpDiv:40,atkDiv:20};
 const PLAYER=GD.PLAYER||{start:["pueblo",6,4],respawn:["pueblo",3,3],balls:8,potions:3,supers:1};
 const FED=GD.FED||{worldId:"terravia-prime",peers:{}};
+const BAL=GD.BAL||{hpMin:30,hpMax:70,atkMin:8,atkMax:18,budgetMax:110,powerMin:30,powerMax:60,scMax:0.4,lvlMax:20,maxMoves:4,tradeLvlMax:20};
 const ZONES=GD.ZONES||{
 pueblo:{name:"Pueblo Brote",map:["TTTTTTTTTTTTTT","T....h..h....T","T..P.........T","T..C......H..T","T............E","T.h.......h..T","T.....X......T","TTTTTTTTTTTTTT"],warps:{"13,4":["ruta1",1,4]}},
 ruta1:{name:"Ruta 1",map:["TTTTTTTTTTTTTT","TGGGG....GGGGT","TGGGG.3..GGGGT","T....GG......T","E..GGGGGG....E","TGGG....GGGGGT","TGGGGG..GGGGGT","TTTTTTTTTTTTTT"],warps:{"0,4":["pueblo",12,4],"13,4":["ciudad",1,4]}},
@@ -79,7 +80,7 @@ const MOUNT_KEYS=[...new Set(Object.values(TILES).map(t=>t.mount).filter(Boolean
 /* ============================================================
    Estado global
    ============================================================ */
-let S={screen:"start",zone:PLAYER.start[0],px:PLAYER.start[1],py:PLAYER.start[2],team:[],box:[],balls:PLAYER.balls,items:{p:PLAYER.potions,s:PLAYER.supers},coins:0,mats:{},bld:{},steps:0,exp:null,beaten:{},dex:{},egg:null,mounts:Object.fromEntries(MOUNT_KEYS.map(k=>[k,false])),snd:true,msg:"",battle:null};
+let S={screen:"start",zone:PLAYER.start[0],px:PLAYER.start[1],py:PLAYER.start[2],team:[],box:[],balls:PLAYER.balls,items:{p:PLAYER.potions,s:PLAYER.supers},coins:0,mats:{},bld:{},steps:0,exp:null,beaten:{},dex:{},egg:null,mounts:Object.fromEntries(MOUNT_KEYS.map(k=>[k,false])),snd:true,tradeOut:null,msg:"",battle:null};
 const R=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
 function reg(name){S.dex[name]=true}
 function mk(name,lvl){const sp=SPECIES[name];const hp=Math.round(sp.hp+lvl*3.5);return{name,lvl,t:sp.t,maxhp:hp,hp,atk:sp.atk+lvl*2,xp:0,next:lvl*20,mv:[...sp.mv],st:null,g:Math.random()<.5?"M":"F"}}
@@ -163,7 +164,7 @@ function sprite(c,size){const T=TYPES[c.t];
 const url=c.name?pixURL(c.name,c.t):null;
 if(url)return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${T.bg};display:flex;align-items:center;justify-content:center;flex:none"><img src="${url}" alt="" width="${size}" height="${size}" style="image-rendering:pixelated;width:86%;height:86%;display:block"></div>`;
 return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${T.bg};border:2px solid ${T.c};display:flex;align-items:center;justify-content:center;flex:none"><i class="ti ${T.icon}" aria-hidden="true" style="font-size:${Math.round(size*.5)}px;color:${T.c}"></i></div>`}
-function render(){G.innerHTML="";if(S.screen==="start")rStart();else if(S.screen==="map")rMap();else if(S.screen==="shop")rShop();else if(S.screen==="dex")rDex();else if(S.screen==="breed")rBreed();else if(S.screen==="craft")rCraft();else if(S.screen==="expd")rExp();else if(S.screen==="box")rBox();else if(S.screen==="fed")rFed();else rBattle();
+function render(){G.innerHTML="";if(S.screen==="start")rStart();else if(S.screen==="map")rMap();else if(S.screen==="shop")rShop();else if(S.screen==="dex")rDex();else if(S.screen==="breed")rBreed();else if(S.screen==="craft")rCraft();else if(S.screen==="expd")rExp();else if(S.screen==="box")rBox();else if(S.screen==="fed")rFed();else if(S.screen==="trade")rTrade();else rBattle();
 if(render.last!==S.screen&&G.firstChild&&G.firstChild.classList)G.firstChild.classList.add("fade");
 render.last=S.screen;updateMusic()}
 
@@ -321,6 +322,117 @@ else{S.coins-=it.pr;if(k==="ball")S.balls++;else S.items[k]++}sfx("buy");render(
 window.exitShop=()=>{S.screen="map";S.msg="";render()};
 
 /* ============================================================
+   Puesto de intercambio (códigos de oferta y cierre, depósito local)
+   ============================================================ */
+function enc(o){return btoa(unescape(encodeURIComponent(JSON.stringify(o))))}
+function dec(s){return JSON.parse(decodeURIComponent(escape(atob(String(s).trim()))))}
+/* Validación ESTRICTA de criaturas recibidas: rechaza (no recorta) lo que no
+   sea legal según el contrato y plausible para su nivel. */
+function tradeCheck(c){
+if(!c||typeof c!=="object")return"el código no contiene una criatura";
+if(!SPECIES[c.name])return`la especie "${esc(String(c.name??"?"))}" no existe en este mundo`;
+if(!Number.isInteger(c.lvl)||c.lvl<1||c.lvl>BAL.tradeLvlMax)return`nivel inválido o mayor a ${BAL.tradeLvlMax}`;
+if(!Number.isInteger(c.maxhp)||c.maxhp<1||c.maxhp>BAL.hpMax+15+c.lvl*6)return"PS máximos imposibles para su nivel";
+if(!Number.isInteger(c.atk)||c.atk<1||c.atk>BAL.atkMax+10+c.lvl*2)return"ataque imposible para su nivel";
+if(!Number.isInteger(c.hp)||c.hp<0||c.hp>c.maxhp)return"PS actuales inválidos";
+if(!Array.isArray(c.mv)||c.mv.length<1||c.mv.length>BAL.maxMoves||c.mv.some(m=>!MOVES[m]))return"movimientos inválidos";
+if(c.st!=null&&!STATUS[c.st])return"estado alterado inválido";
+return null}
+function canGiveFromTeam(i){const c=S.team[i];if(S.team.length<=1)return false;
+return c.hp<=0?S.team.some((x,j)=>j!==i&&x.hp>0):S.team.filter(x=>x.hp>0).length>1}
+function giveList(){const out=[];
+S.team.forEach((c,i)=>{if(canGiveFromTeam(i))out.push(["t"+i,c])});
+S.box.forEach((c,i)=>out.push(["b"+i,c]));return out}
+function takeGive(key){const i=Number(key.slice(1));
+return key[0]==="t"?S.team.splice(i,1)[0]:S.box.splice(i,1)[0]}
+function offerCode(){const t=S.tradeOut;return enc({k:"offer",id:t.id,world:FED.worldId,c:t.c,wants:t.wants})}
+function ficha(c){return `<div class="row" style="margin-bottom:6px">${sprite(c,40)}<div style="flex:1">
+<p style="margin:0;font-size:13px;font-weight:500">${c.name}${gSym(c)}${stTag(c)} <span style="color:var(--color-text-secondary);font-weight:400">nv. ${c.lvl}</span></p>
+<p style="margin:0;font-size:12px;color:var(--color-text-secondary)">PS ${c.hp}/${c.maxhp} · Ataque ${c.atk} · ${c.mv.map(m=>MOVES[m].n).join(" · ")}</p>
+<p style="margin:0;font-size:11px;color:var(--color-text-tertiary)">${DESCS[c.name]||""}</p></div></div>`}
+function rTrade(){const t=S.tradeOut;
+let body="";
+if(t){
+body=`<p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 6px">Tu criatura en depósito (pedís: ${t.wants.length?t.wants.join(", "):"cualquier especie"}):</p>
+${ficha(t.c)}
+<p style="font-size:13px;color:var(--color-text-secondary);margin:8px 0 4px">Pasale este código de oferta a la otra persona:</p>
+<input readonly value="${offerCode()}" onclick="this.select()" style="width:100%;font-size:11px;margin-bottom:10px"/>
+<p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 4px">Cuando te responda, pegá su código de cierre:</p>
+<div class="row" style="margin-bottom:10px"><input id="trclose" placeholder="Código de cierre" style="flex:1"/><button onclick="trClose()">Cerrar intercambio</button></div>
+<button onclick="trCancel()"><i class="ti ti-arrow-back-up" aria-hidden="true"></i> Cancelar oferta (recuperar criatura)</button>`}
+else{
+const give=giveList();
+const inOf=S.trIn;
+body=`<p style="font-size:14px;font-weight:500;margin:0 0 6px">Crear una oferta</p>
+<p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 6px">1. Elegí qué criatura ofrecés (queda en depósito; no puede ir la última sana del equipo):</p>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-bottom:8px">
+${give.map(([k,c])=>`<button class="mvbtn" onclick="trGiveSel('${k}')" style="${S.trGive===k?"outline:2px solid var(--color-text-primary);":""}"><span style="font-weight:500">${c.name}${gSym(c)}</span><br><span style="font-size:12px;color:var(--color-text-secondary)">nv. ${c.lvl} · ${k[0]==="t"?"equipo":"base"}</span></button>`).join("")||`<p style="font-size:13px;color:var(--color-text-tertiary)">No tenés criaturas ofrecibles.</p>`}
+</div>
+<p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 6px">2. Qué pedís a cambio (hasta 3 especies; ninguna = cualquiera):</p>
+<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+${Object.keys(SPECIES).map(n=>`<button style="padding:3px 10px;font-size:12px;${S.trWants.includes(n)?"outline:2px solid var(--color-text-primary);":""}" onclick="trWant('${n}')">${n}</button>`).join("")}
+</div>
+<button onclick="trMakeOffer()" ${S.trGive?"":"disabled"}><i class="ti ti-package-export" aria-hidden="true"></i> Depositar y generar código</button>
+<hr style="border:none;border-top:0.5px solid var(--color-border-tertiary);margin:14px 0">
+<p style="font-size:14px;font-weight:500;margin:0 0 6px">Aceptar una oferta</p>
+<div class="row" style="margin-bottom:8px"><input id="trin" placeholder="Pegá el código de oferta" style="flex:1"/><button onclick="trParseOffer()">Ver oferta</button></div>
+${inOf?`<div class="card" style="margin-bottom:8px">
+<p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 6px">Te ofrecen (validada contra tu contrato ✓), desde el mundo ${esc(inOf.world||"?")}:</p>
+${ficha(inOf.c)}
+<p style="font-size:13px;margin:0 0 6px">Pide a cambio: <b>${inOf.wants.length?inOf.wants.join(", "):"cualquier especie"}</b></p>
+${(()=>{const cands=giveList().filter(([k,c])=>!inOf.wants.length||inOf.wants.includes(c.name));
+return cands.length?`<p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 6px">Elegí cuál entregás:</p>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-bottom:8px">
+${cands.map(([k,c])=>`<button class="mvbtn" onclick="trGiveFor('${k}')" style="${S.trGiveFor===k?"outline:2px solid var(--color-text-primary);":""}"><span style="font-weight:500">${c.name}${gSym(c)}</span><br><span style="font-size:12px;color:var(--color-text-secondary)">nv. ${c.lvl} · ${k[0]==="t"?"equipo":"base"}</span></button>`).join("")}
+</div>
+<button onclick="trAccept()" ${S.trGiveFor?"":"disabled"}><i class="ti ti-arrows-exchange" aria-hidden="true"></i> Aceptar y generar cierre</button>`:`<p style="font-size:13px;color:#E24B4A;margin:0">No tenés ninguna criatura de las pedidas (o no podés entregarla).</p>`})()}
+</div>`:""}
+${S.trCloseCode?`<p style="font-size:13px;color:var(--color-text-secondary);margin:8px 0 4px">¡Intercambio aceptado! Mandale este código de cierre a la otra persona:</p>
+<input readonly value="${S.trCloseCode}" onclick="this.select()" style="width:100%;font-size:11px"/>`:""}`}
+G.appendChild(el(`<div class="card">
+<p style="margin:0 0 4px;font-weight:500;font-size:15px"><i class="ti ti-arrows-exchange" aria-hidden="true"></i> Puesto de intercambio</p>
+<p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 12px">Intercambio por códigos: ofrecés una criatura y pedís otra a cambio. El receptor ve la ficha completa y su juego valida que todo sea legal según el contrato. Una oferta a la vez.</p>
+${S.trMsg?`<p style="font-size:13px;margin:0 0 10px;color:${S.trMsg.startsWith("¡")?"var(--color-text-primary)":"#E24B4A"}">${S.trMsg}</p>`:""}
+${body}
+<button style="margin-top:12px" onclick="closeTrade()"><i class="ti ti-arrow-left" aria-hidden="true"></i> Volver a la base</button></div>`))}
+window.openTrade=()=>{S.screen="trade";S.trGive=null;S.trWants=[];S.trIn=null;S.trGiveFor=null;S.trCloseCode=null;S.trMsg="";render()};
+window.closeTrade=()=>{S.screen="box";S.trIn=null;S.trMsg="";render()};
+window.trGiveSel=k=>{S.trGive=S.trGive===k?null:k;render()};
+window.trGiveFor=k=>{S.trGiveFor=S.trGiveFor===k?null:k;render()};
+window.trWant=n=>{const i=S.trWants.indexOf(n);if(i>=0)S.trWants.splice(i,1);else{S.trWants.push(n);if(S.trWants.length>3)S.trWants.shift()}render()};
+window.trMakeOffer=()=>{if(!S.trGive||S.tradeOut)return;
+const c=takeGive(S.trGive);
+S.tradeOut={c,wants:[...S.trWants],id:Math.random().toString(36).slice(2,8)};
+S.trGive=null;S.trWants=[];S.trMsg="¡Oferta creada! Tu criatura queda en depósito hasta cerrar o cancelar.";render()};
+window.trParseOffer=()=>{S.trIn=null;S.trGiveFor=null;S.trMsg="";
+let d;try{d=dec(document.getElementById("trin").value)}catch(e){S.trMsg="Código de oferta inválido.";render();return}
+if(!d||d.k!=="offer"||typeof d.id!=="string"){S.trMsg="Eso no es un código de oferta.";render();return}
+if(S.tradeOut&&S.tradeOut.id===d.id){S.trMsg="No podés aceptar tu propia oferta.";render();return}
+const err=tradeCheck(d.c);
+if(err){S.trMsg="Oferta rechazada: "+err+".";render();return}
+d.wants=(Array.isArray(d.wants)?d.wants.filter(n=>SPECIES[n]):[]).slice(0,3);
+S.trIn=d;render()};
+window.trAccept=()=>{const d=S.trIn;if(!d||!S.trGiveFor)return;
+const cand=giveList().find(([k])=>k===S.trGiveFor);
+if(!cand||(d.wants.length&&!d.wants.includes(cand[1].name))){S.trGiveFor=null;render();return}
+const given=takeGive(S.trGiveFor);
+const nc=cleanCreature(d.c);stash(nc);reg(nc.name);sfx("capture");
+S.trCloseCode=enc({k:"close",id:d.id,world:FED.worldId,c:given});
+S.trIn=null;S.trGiveFor=null;S.trMsg=`¡Recibiste a ${nc.name}! Entregaste a ${given.name}.`;render()};
+window.trClose=()=>{const t=S.tradeOut;if(!t)return;
+let d;try{d=dec(document.getElementById("trclose").value)}catch(e){S.trMsg="Código de cierre inválido.";render();return}
+if(!d||d.k!=="close"||d.id!==t.id){S.trMsg="Ese cierre no corresponde a tu oferta.";render();return}
+const err=tradeCheck(d.c);
+if(err){S.trMsg="Cierre rechazado: "+err+".";render();return}
+if(t.wants.length&&!t.wants.includes(d.c.name)){S.trMsg=`Cierre rechazado: pediste ${t.wants.join(", ")} y te mandaron ${esc(String(d.c.name))}.`;render();return}
+if(S.team.length>=4&&S.box.length>=STORAGE.cap){S.trMsg="No tenés lugar: hacé espacio en el equipo o la base y volvé a pegar el cierre.";render();return}
+const nc=cleanCreature(d.c);stash(nc);reg(nc.name);sfx("capture");
+S.tradeOut=null;S.trMsg=`¡Intercambio cerrado! Recibiste a ${nc.name}.`;render()};
+window.trCancel=()=>{const t=S.tradeOut;if(!t)return;
+if(S.team.length>=4&&S.box.length>=STORAGE.cap){S.trMsg="No tenés lugar para recuperarla: hacé espacio primero.";render();return}
+stash(t.c);S.tradeOut=null;S.trMsg=`Oferta cancelada: ${t.c.name} volvió con vos.`;render()};
+
+/* ============================================================
    Pantalla: federación de mundos (forks como mundos)
    ============================================================ */
 function fedCompat(remoteSpecies){const mine=[...new Set([...S.team,...S.box].map(c=>c.name))];
@@ -382,7 +494,8 @@ ${S.team.map((c,i)=>`<button class="mvbtn" onclick="deposit(${i})" ${canDeposit(
 ${S.box.length?`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px">
 ${S.box.map((c,i)=>`<button class="mvbtn" onclick="withdraw(${i})" ${S.team.length>=4?"disabled":""}><span style="font-weight:500">${c.name}${gSym(c)}${stTag(c)}</span><br><span style="font-size:12px;color:var(--color-text-secondary)">nv. ${c.lvl} · ${c.hp}/${c.maxhp} PS · ${S.team.length>=4?"equipo lleno":"retirar ↑"}</span></button>`).join("")}
 </div>`:`<p style="font-size:13px;color:var(--color-text-tertiary);margin:0">La base está vacía.</p>`}
-<button style="margin-top:12px" onclick="exitBox()"><i class="ti ti-arrow-left" aria-hidden="true"></i> Volver al mapa</button></div>`))}
+<div class="row" style="margin-top:12px"><button onclick="openTrade()"><i class="ti ti-arrows-exchange" aria-hidden="true"></i> Puesto de intercambio${S.tradeOut?" · 1 en depósito":""}</button>
+<button onclick="exitBox()"><i class="ti ti-arrow-left" aria-hidden="true"></i> Volver al mapa</button></div></div>`))}
 window.deposit=i=>{if(!canDeposit(i)||S.box.length>=STORAGE.cap)return;S.box.push(S.team.splice(i,1)[0]);render()};
 window.withdraw=i=>{if(S.team.length>=4)return;S.team.push(S.box.splice(i,1)[0]);render()};
 window.exitBox=()=>{S.screen="map";S.msg="";render()};
@@ -544,7 +657,7 @@ S.battle=null;S.screen="map";render()};
 /* ============================================================
    Guardado y carga
    ============================================================ */
-function buildSaveCode(){const d={zone:S.zone,px:S.px,py:S.py,team:S.team,box:S.box,balls:S.balls,items:S.items,coins:S.coins,mats:S.mats,bld:S.bld,steps:S.steps,exp:S.exp,beaten:S.beaten,dex:S.dex,egg:S.egg,mounts:S.mounts,snd:S.snd};
+function buildSaveCode(){const d={zone:S.zone,px:S.px,py:S.py,team:S.team,box:S.box,balls:S.balls,items:S.items,coins:S.coins,mats:S.mats,bld:S.bld,steps:S.steps,exp:S.exp,beaten:S.beaten,dex:S.dex,egg:S.egg,mounts:S.mounts,snd:S.snd,trade:S.tradeOut};
 return btoa(unescape(encodeURIComponent(JSON.stringify(d))))}
 window.saveGame=()=>{const code=buildSaveCode();const inp=document.getElementById("savecode");inp.value=code;inp.select();
 let msg="Código generado. Copialo y guardalo en un lugar seguro.";
@@ -582,6 +695,10 @@ S.dex={};Object.keys(SPECIES).forEach(k=>{if(d.dex&&d.dex[k])S.dex[k]=true});
 S.team.concat(S.box).forEach(c=>reg(c.name));
 S.mounts=Object.fromEntries(MOUNT_KEYS.map(k=>[k,!!(d.mounts&&d.mounts[k]===true)]));
 S.snd=d.snd!==false;
+S.tradeOut=null;
+if(d.trade&&d.trade.c){const tc=cleanCreature(d.trade.c);
+if(tc)S.tradeOut={c:tc,wants:(Array.isArray(d.trade.wants)?d.trade.wants.filter(n=>SPECIES[n]):[]).slice(0,3),
+id:(String(d.trade.id||"").replace(/[^a-z0-9]/gi,"").slice(0,12))||Math.random().toString(36).slice(2,8)}}
 S.egg=null;
 if(d.egg&&SPECIES[d.egg.sp]){const emv=(Array.isArray(d.egg.mv)?d.egg.mv.filter(m=>MOVES[m]):[]).slice(0,2);
 S.egg={sp:d.egg.sp,mv:emv.length?emv:[...SPECIES[d.egg.sp].mv],hp:cleanNum(d.egg.hp,0,0,99),atk:cleanNum(d.egg.atk,0,0,99),steps:cleanNum(d.egg.steps,0,0,999)}}

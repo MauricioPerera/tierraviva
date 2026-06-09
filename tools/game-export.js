@@ -17,7 +17,7 @@ function buildGame(d) {
     BIOMES: d.biomes, MATERIALS: d.materials, RECIPES: d.recipes,
     EXPEDITIONS: d.expeditions, BUILDINGS: d.buildings, STORAGE: d.storage,
     SFX: d.sfx, MUSIC: d.music,
-    BREED: d.breeding, PLAYER: d.player, FED: d.federation, ZONES: d.zones
+    BREED: d.breeding, PLAYER: d.player, FED: d.federation, BAL: d.balance, ZONES: d.zones
   };
 }
 

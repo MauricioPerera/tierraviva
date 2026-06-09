@@ -135,7 +135,7 @@ sfx:
 music:
   map:    { tempo: 104, wave: triangle, vol: 0.025, loop: true, notes: [60, 0, 64, 0, 67, 0, 64, 0, 69, 0, 67, 0, 64, 62, 60, 0, 62, 0, 65, 0, 69, 0, 65, 0, 67, 0, 64, 0, 62, 0, 60, 0] }
   battle: { tempo: 148, wave: square, vol: 0.02, loop: true, notes: [57, 57, 0, 60, 57, 0, 62, 63, 62, 60, 57, 0, 55, 0, 57, 0] }
-balance: { hpMin: 30, hpMax: 70, atkMin: 8, atkMax: 18, budgetMax: 110, powerMin: 30, powerMax: 60, scMax: 0.4, lvlMax: 20, maxMoves: 4 }
+balance: { hpMin: 30, hpMax: 70, atkMin: 8, atkMax: 18, budgetMax: 110, powerMin: 30, powerMax: 60, scMax: 0.4, lvlMax: 20, maxMoves: 4, tradeLvlMax: 20 }
 breeding: { eggSteps: 24, hatchLvl: 5, hpDiv: 40, atkDiv: 20 }
 player: { start: [pueblo, 6, 4], respawn: [pueblo, 3, 3], balls: 8, potions: 3, supers: 1 }
 federation:
@@ -253,6 +253,7 @@ Límites que el lint aplica a todo el contenido para mantener el juego jugable (
 - Especies: `hp` en `[hpMin, hpMax]`, `atk` en `[atkMin, atkMax]`, y presupuesto total `hp + 3×atk ≤ budgetMax` (impide maximizar todo a la vez). Máximo `maxMoves` movimientos. Las evoluciones deben mejorar los stats de su forma base.
 - Movimientos: potencia en `[powerMin, powerMax]`; probabilidad de estado `sc ≤ scMax`.
 - Entrenadores: ningún miembro por encima de `lvlMax`.
+- Intercambios: ninguna criatura recibida por encima de `tradeLvlMax`; el receptor además valida especie, movimientos, estado y stats plausibles para el nivel, y **rechaza** (no recorta) lo ilegal.
 
 ## Federation
 

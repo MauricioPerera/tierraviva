@@ -1011,6 +1011,19 @@ window.GAME = {
     "worldId": "terravia-prime",
     "peers": {}
   },
+  "BAL": {
+    "hpMin": 30,
+    "hpMax": 70,
+    "atkMin": 8,
+    "atkMax": 18,
+    "budgetMax": 110,
+    "powerMin": 30,
+    "powerMax": 60,
+    "scMax": 0.4,
+    "lvlMax": 20,
+    "maxMoves": 4,
+    "tradeLvlMax": 20
+  },
   "ZONES": {
     "pueblo": {
       "name": "Pueblo Brote",

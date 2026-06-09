@@ -109,6 +109,12 @@ Flujo para crear contenido (una criatura, un bioma, una zona entera) sin tocar e
 
 `game-export.js --check` detecta drift (generado desincronizado del contrato). El motor consume `window.GAME` con **fallback embebido**: si `game-data.generated.js` falta, el juego degrada con gracia a su snapshot interno — el doble clic vía `file://` nunca se rompe. La lógica (fórmulas de daño, captura, herencia, IA) vive en el motor por diseño.
 
+### Intercambio de criaturas
+
+En la base está el puesto de intercambio, que funciona por códigos (como el guardado): elegís una criatura para ofrecer —queda **en depósito**, fuera de tu equipo— y hasta 3 especies que aceptás a cambio (ninguna = cualquiera). Eso genera un código de oferta para pasarle a otra persona. Quien lo recibe ve la ficha completa (stats, movimientos, género, descripción) y su juego **valida la criatura contra su contrato**: especie existente, nivel ≤ `tradeLvlMax`, stats plausibles para el nivel, movimientos y estados reales — lo ilegal se rechaza, no se recorta. Al aceptar entrega una de las especies pedidas y genera el código de cierre; cuando lo pegás, recuperás el control: recibís su criatura y se libera el depósito. Podés cancelar la oferta en cualquier momento y recuperar la tuya.
+
+Límites honestos: el intercambio no es atómico (quien acepta podría no mandarte el cierre — el depósito y la cancelación cubren el caso honesto) y, como los saves son locales, la clonación no es prevenible. La garantía fuerte es de **legalidad**: nada que viole el contrato puede entrar a tu partida.
+
 ## Federación de mundos
 
 Cada fork de este repo es un **mundo independiente**: su `GAME.md` define criaturas, zonas y balance propios, y el lint garantiza que sea un mundo válido. El token `federation` declara la identidad del mundo (`worldId`) y sus pares conocidos (`peers`).

@@ -246,7 +246,7 @@ function lintGame(d) {
 
   // balance-valid: límites anti contenido roto (criaturas inmortales, movimientos desmedidos, jefes imposibles)
   const bal = d.balance || {};
-  for (const k of ['hpMin', 'hpMax', 'atkMin', 'atkMax', 'budgetMax', 'powerMin', 'powerMax', 'scMax', 'lvlMax', 'maxMoves'])
+  for (const k of ['hpMin', 'hpMax', 'atkMin', 'atkMax', 'budgetMax', 'powerMin', 'powerMax', 'scMax', 'lvlMax', 'maxMoves', 'tradeLvlMax'])
     if (!(bal[k] > 0)) add('error', 'balance-valid', 'balance.' + k + ' faltante o inválido');
   if (bal.hpMax > 0) {
     for (const [n, sp] of Object.entries(species)) {
