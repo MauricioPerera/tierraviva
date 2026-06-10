@@ -287,23 +287,39 @@ S.msg=`¡El huevo eclosionó! Nació ${e.sp}${c.g==="M"?" ♂":" ♀"} (nv. ${BR
    Pantalla: lista de criaturas (registro de capturas)
    ============================================================ */
 function rDex(){const names=Object.keys(SPECIES);const caught=names.filter(n=>S.dex[n]).length;
+const sel=S.dexSel&&S.dex[S.dexSel]&&SPECIES[S.dexSel]?S.dexSel:null;
+let body="";
+if(sel){const sp=SPECIES[sel];const num=String(names.indexOf(sel)+1).padStart(2,"0");
+const habs=(sp.habitats||[]).map(h=>BIOMES[h]?BIOMES[h].n:h);
+body=`<div class="card">
+<div class="row" style="margin-bottom:10px">${sprite({name:sel,t:sp.t},72)}
+<div style="flex:1"><p style="margin:0 0 4px;font-weight:500;font-size:17px">#${num} ${sel}</p>${badge(sp.t)}</div></div>
+<p style="font-size:13px;margin:0 0 6px">PS base <b>${sp.hp}</b> · Ataque base <b>${sp.atk}</b></p>
+<p style="font-size:13px;margin:0 0 6px">Movimientos: ${sp.mv.map(m=>MOVES[m].n).join(" · ")}</p>
+${EVO[sel]?`<p style="font-size:13px;margin:0 0 6px">Evoluciona a <b>${EVO[sel][0]}</b> al nivel ${EVO[sel][1]}.</p>`:""}
+${BASE[sel]?`<p style="font-size:13px;margin:0 0 6px">Evoluciona de <b>${BASE[sel]}</b>.</p>`:""}
+<p style="font-size:13px;margin:0 0 6px">Hábitat: ${habs.length?habs.join(", "):"no aparece en estado salvaje (evolución o crianza)"}.</p>
+<p style="font-size:13px;color:var(--color-text-secondary);margin:6px 0 0;line-height:1.6">${DESCS[sel]||""}</p>
+<button style="margin-top:12px" onclick="dexBack()"><i class="ti ti-arrow-left" aria-hidden="true"></i> Volver a la lista</button></div>`}
+else{
+body=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px">
+${names.map((n,i)=>{const sp=SPECIES[n];const num=String(i+1).padStart(2,"0");
+if(!S.dex[n])return `<div class="card" style="padding:10px 6px;text-align:center;opacity:.6">
+<div style="display:flex;justify-content:center;margin-bottom:6px"><div style="width:40px;height:40px;border-radius:50%;background:var(--color-background-secondary);border:2px solid var(--color-border-secondary);display:flex;align-items:center;justify-content:center"><i class="ti ti-question-mark" aria-hidden="true" style="font-size:20px;color:var(--color-text-tertiary)"></i></div></div>
+<p style="margin:0;font-size:12px;font-weight:500;color:var(--color-text-tertiary)">#${num} ???</p></div>`;
+return `<div class="card" style="padding:10px 6px;text-align:center;cursor:pointer" onclick="dexOpen('${n}')">
+<div style="display:flex;justify-content:center;margin-bottom:6px">${sprite({name:n,t:sp.t},40)}</div>
+<p style="margin:0;font-size:12px;font-weight:500">#${num} ${n}</p></div>`}).join("")}
+</div>`}
 G.appendChild(el(`<div class="card">
 <p style="margin:0 0 4px;font-weight:500;font-size:15px"><i class="ti ti-list-details" aria-hidden="true"></i> Criaturas de Terravia</p>
-<p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 12px">Capturadas: ${caught}/${names.length}. Las desconocidas se revelan al capturarlas (o al evolucionar a ellas).</p>
-<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px">
-${names.map((n,i)=>{const sp=SPECIES[n];const num=String(i+1).padStart(2,"0");
-if(!S.dex[n])return `<div class="card" style="padding:10px;text-align:center;opacity:.6">
-<div style="display:flex;justify-content:center;margin-bottom:6px"><div style="width:40px;height:40px;border-radius:50%;background:var(--color-background-secondary);border:2px solid var(--color-border-secondary);display:flex;align-items:center;justify-content:center"><i class="ti ti-question-mark" aria-hidden="true" style="font-size:20px;color:var(--color-text-tertiary)"></i></div></div>
-<p style="margin:0;font-size:13px;font-weight:500;color:var(--color-text-tertiary)">#${num} ???</p></div>`;
-return `<div class="card" style="padding:10px;text-align:center">
-<div style="display:flex;justify-content:center;margin-bottom:6px">${sprite({name:n,t:sp.t},40)}</div>
-<p style="margin:0 0 4px;font-size:13px;font-weight:500">#${num} ${n}</p>${badge(sp.t)}
-<p style="font-size:11px;color:var(--color-text-secondary);margin:6px 0 0">PS ${sp.hp} · Ataque ${sp.atk}<br>${sp.mv.map(m=>MOVES[m].n).join(" · ")}</p>
-<p style="font-size:11px;color:var(--color-text-tertiary);margin:6px 0 0;line-height:1.5;text-align:left">${DESCS[n]||""}</p></div>`}).join("")}
-</div>
-<button style="margin-top:12px" onclick="closeDex()"><i class="ti ti-arrow-left" aria-hidden="true"></i> Volver al mapa</button></div>`))}
-window.openDex=()=>{S.screen="dex";render()};
-window.closeDex=()=>{S.screen="map";render()};
+<p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 12px">Capturadas: ${caught}/${names.length}. ${sel?"":"Tocá una capturada para ver su ficha; las desconocidas se revelan al capturarlas (o al evolucionar a ellas)."}</p>
+${body}
+${sel?"":`<button style="margin-top:12px" onclick="closeDex()"><i class="ti ti-arrow-left" aria-hidden="true"></i> Volver al mapa</button>`}</div>`))}
+window.openDex=()=>{S.screen="dex";S.dexSel=null;render()};
+window.dexOpen=n=>{if(S.dex[n]&&SPECIES[n]){S.dexSel=n;render()}};
+window.dexBack=()=>{S.dexSel=null;render()};
+window.closeDex=()=>{S.screen="map";S.dexSel=null;render()};
 
 /* ============================================================
    Pantalla: tienda

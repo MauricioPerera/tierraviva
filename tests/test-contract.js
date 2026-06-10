@@ -22,6 +22,17 @@ ok(Object.keys(A.SPECIES).every(n => typeof A.DESCS[n] === "string" && A.DESCS[n
 // Ambos modos arrancan
 A.g.pick("Flarito");
 ok(A.S.team.length === 1 && A.S.zone === A.PLAYER.start[0], "arranque en modo generado");
+
+// Dex: lista compacta con detalle al abrir
+A.g.openDex();
+A.g.dexOpen("Sombrux"); // no capturada: no abre
+ok(A.S.dexSel == null, "dex no abre ficha de especie no capturada");
+A.g.dexOpen("Flarito");
+ok(A.S.dexSel === "Flarito", "dex abre ficha de capturada");
+A.g.dexBack();
+ok(A.S.dexSel == null && A.S.screen === "dex", "volver a la lista");
+A.g.closeDex();
+ok(A.S.screen === "map", "cerrar dex vuelve al mapa");
 B.g.pick("Aquino");
 ok(B.S.team[0].name === "Aquino" && B.S.screen === "map", "arranque en modo fallback");
 
