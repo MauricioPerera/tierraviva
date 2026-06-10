@@ -59,6 +59,24 @@ input:focus{outline:none;border-color:var(--color-border-secondary)}
 .faintfx{animation:faintfx .55s ease-in forwards}
 @keyframes faintfx{to{opacity:.25;transform:translateY(8px)}}
 .plat-sh{width:46px;height:9px;border-radius:50%;background:radial-gradient(ellipse,rgba(0,0,0,.20),transparent 70%);margin-top:-3px}
+/* Diorama 3D del mapa (toggle): tablero inclinado, casillas extruidas con cara
+   frontal del mismo color del contrato oscurecido, e íconos como billboards. */
+.isowrap.iso{perspective:1000px;perspective-origin:50% 18%}
+.isowrap.iso .tilegrid{transform:rotateX(54deg) scale(1.05);transform-style:preserve-3d;margin:-3% 0 -8%}
+.isowrap.iso .tile{transform-style:preserve-3d}
+.isowrap.iso .tile>i,.isowrap.iso .tile>span{transform:rotateX(-54deg);transform-origin:50% 88%}
+.isowrap.iso .tile[data-t="T"]{transform:translateZ(14px)}
+.isowrap.iso .tile[data-t="h"]{transform:translateZ(12px)}
+.isowrap.iso .tile[data-t="R"]{transform:translateZ(10px)}
+.isowrap.iso .tile[data-t="M"]{transform:translateZ(7px)}
+.isowrap.iso .tile[data-t="C"],.isowrap.iso .tile[data-t="S"],.isowrap.iso .tile[data-t="H"],.isowrap.iso .tile[data-t="W"],.isowrap.iso .tile[data-t="X"],.isowrap.iso .tile[data-t="P"]{transform:translateZ(5px)}
+.isowrap.iso .tile[data-t="A"]{transform:translateZ(-4px)}
+.isowrap.iso .tile[data-t="T"]::after,.isowrap.iso .tile[data-t="h"]::after,.isowrap.iso .tile[data-t="R"]::after,.isowrap.iso .tile[data-t="M"]::after,.isowrap.iso .tile[data-t="C"]::after,.isowrap.iso .tile[data-t="S"]::after,.isowrap.iso .tile[data-t="H"]::after,.isowrap.iso .tile[data-t="W"]::after,.isowrap.iso .tile[data-t="X"]::after,.isowrap.iso .tile[data-t="P"]::after{content:"";position:absolute;left:0;top:100%;width:100%;transform-origin:50% 0;transform:rotateX(-90deg);background:inherit;filter:brightness(.55) saturate(1.15)}
+.isowrap.iso .tile[data-t="T"]::after{height:14px}
+.isowrap.iso .tile[data-t="h"]::after{height:12px}
+.isowrap.iso .tile[data-t="R"]::after{height:10px}
+.isowrap.iso .tile[data-t="M"]::after{height:7px}
+.isowrap.iso .tile[data-t="C"]::after,.isowrap.iso .tile[data-t="S"]::after,.isowrap.iso .tile[data-t="H"]::after,.isowrap.iso .tile[data-t="W"]::after,.isowrap.iso .tile[data-t="X"]::after,.isowrap.iso .tile[data-t="P"]::after{height:5px}
 .hpbar{height:8px;border-radius:4px;background:var(--color-background-secondary);overflow:hidden;flex:1}
 .hpfill{height:100%;border-radius:4px;transition:width .3s}
 .mvbtn{padding:10px 12px;text-align:left}

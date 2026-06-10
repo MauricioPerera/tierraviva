@@ -38,6 +38,19 @@ ok(S.coins === 0 && S.box.length === 0 && S.egg === null && S.exp === null, "def
 ok(S.mounts.agua === false && Object.keys(S.mats).length === 0 && Object.keys(S.bld).length === 0, "defaults: mounts/mats/bld");
 ok(S.dex.Brotin === true, "dex reconstruido desde el equipo");
 
+// Toggle de vista 3D: default activo, conmutable y persistido
+ok(S.iso === true, "vista 3D activa por defecto");
+w.toggleIso();
+ok(S.iso === false, "toggle a 2D");
+w.saveGame();
+ok(decodeSave(inp.value).iso === false, "preferencia de vista viaja en el save");
+inp.value = encodeSave({ team: [A.mk("Flarito", 5)], iso: false });
+w.loadGame();
+ok(S.iso === false, "load restaura la vista 2D");
+inp.value = encodeSave({ team: [A.mk("Flarito", 5)] });
+w.loadGame();
+ok(S.iso === true, "save viejo sin preferencia: 3D por defecto");
+
 // Sanitización: códigos manipulados no inyectan HTML ni corrompen el estado
 const evil = "<img src=x onerror=alert(1)>";
 inp.value = encodeSave({

@@ -81,7 +81,7 @@ const MOUNT_KEYS=[...new Set(Object.values(TILES).map(t=>t.mount).filter(Boolean
 /* ============================================================
    Estado global
    ============================================================ */
-let S={screen:"start",zone:PLAYER.start[0],px:PLAYER.start[1],py:PLAYER.start[2],team:[],box:[],balls:PLAYER.balls,items:{p:PLAYER.potions,s:PLAYER.supers},coins:0,mats:{},bld:{},steps:0,exp:null,beaten:{},dex:{},egg:null,mounts:Object.fromEntries(MOUNT_KEYS.map(k=>[k,false])),snd:true,tradeOut:null,msg:"",battle:null};
+let S={screen:"start",zone:PLAYER.start[0],px:PLAYER.start[1],py:PLAYER.start[2],team:[],box:[],balls:PLAYER.balls,items:{p:PLAYER.potions,s:PLAYER.supers},coins:0,mats:{},bld:{},steps:0,exp:null,beaten:{},dex:{},egg:null,mounts:Object.fromEntries(MOUNT_KEYS.map(k=>[k,false])),snd:true,iso:true,tradeOut:null,msg:"",battle:null};
 const R=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
 function reg(name){S.dex[name]=true}
 function mk(name,lvl){const sp=SPECIES[name];const hp=Math.round(sp.hp+lvl*3.5);return{name,lvl,t:sp.t,maxhp:hp,hp,atk:sp.atk+lvl*2,xp:0,next:lvl*20,mv:[...sp.mv],st:null,g:Math.random()<.5?"M":"F"}}
@@ -111,6 +111,7 @@ if(n>0)beep(NOTE(n),stepMs/1000*.85,m.wave,m.vol);
 musStep++;
 if(musStep>=m.notes.length){if(m.loop)musStep=0;else stopMusic()}},stepMs)}
 window.toggleSnd=()=>{S.snd=!S.snd;if(!S.snd)stopMusic();render()};
+window.toggleIso=()=>{S.iso=!S.iso;render()};
 
 /* ============================================================
    Helpers de UI
@@ -130,21 +131,26 @@ function pixURL(name,t){const key=name+"|"+t;if(key in PIX)return PIX[key];
 let url=null;
 try{const cv=document.createElement("canvas");
 if(cv&&typeof cv.getContext==="function"){
-const N=12,H=6;cv.width=N;cv.height=N;const ctx=cv.getContext("2d");
+const N=12,H=6,SC=2;cv.width=N*SC;cv.height=N*SC;const ctx=cv.getContext("2d");
 if(ctx){
 let h=5381;for(const ch of key)h=(h*33+ch.charCodeAt(0))>>>0;
 let s=h||1;const rnd=()=>{s|=0;s=(s+0x6D2B79F5)|0;let x=Math.imul(s^s>>>15,1|s);x=(x+Math.imul(x^x>>>7,61|x))^x;return((x^x>>>14)>>>0)/4294967296};
 const T=TYPES[t]||TYPES.normal;
 const rgb=hex=>[parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)];
-const css=a=>`rgb(${a.map(Math.round).join(",")})`;
+const css=a=>`rgb(${a.map(v=>Math.round(Math.min(255,Math.max(0,v)))).join(",")})`;
+// cada celda se pinta a 2×2 con bisel (subpíxel claro arriba-izquierda, oscuro
+// abajo-derecha): relieve tipo voxel sin tocar el formato del token art
+const paint=(x,y,col)=>{ctx.fillStyle=css(col);ctx.fillRect(x*SC,y*SC,SC,SC);
+ctx.fillStyle=css(col.map(v=>v+(255-v)*.35));ctx.fillRect(x*SC,y*SC,1,1);
+ctx.fillStyle=css(col.map(v=>v*.62));ctx.fillRect(x*SC+1,y*SC+1,1,1)};
 const base=rgb(T.c);
-const body=css(base),shade=css(base.map(v=>v*.62)),lite=css(base.map(v=>v+(255-v)*.45));
+const shade=base.map(v=>v*.62),lite=base.map(v=>v+(255-v)*.45);
 const art=ART[name];
 if(art){
 // retrato dibujado en el contrato: paleta semántica 0..5 según el tipo
-const pal={1:body,2:shade,3:lite,4:"#1a1a18",5:"#ffffff"};
+const pal={1:base,2:shade,3:lite,4:[26,26,24],5:[255,255,255]};
 for(let y=0;y<N;y++)for(let x=0;x<N;x++){const v=(art[y]||[])[x];if(!v)continue;
-ctx.fillStyle=pal[v]||body;ctx.fillRect(x,y,1,1)}}
+paint(x,y,pal[v]||base)}}
 else{
 // silueta procedural: mitad izquierda con probabilidad según distancia al centro + columna espinal
 const grid=[];
@@ -156,9 +162,9 @@ grid[y][x]=rnd()<p*1.25?(rnd()<.3?2:1):0}}
 for(let y=2;y<N-2;y++)grid[y][H-1]=grid[y][H-1]||1;
 const ey=4;grid[ey][H-2]=1;
 for(let y=0;y<N;y++)for(let x=0;x<H;x++){const v=grid[y][x];if(!v)continue;
-ctx.fillStyle=v===2?shade:(y<3?lite:body);
-ctx.fillRect(x,y,1,1);ctx.fillRect(N-1-x,y,1,1)}
-ctx.fillStyle="#1a1a18";ctx.fillRect(H-2,ey,1,1);ctx.fillRect(N-H+1,ey,1,1)}
+const col=v===2?shade:(y<3?lite:base);
+paint(x,y,col);paint(N-1-x,y,col)}
+paint(H-2,ey,[26,26,24]);paint(N-H+1,ey,[26,26,24])}
 url=cv.toDataURL()}}}catch(e){url=null}
 PIX[key]=url;return url}
 function sprite(c,size){const T=TYPES[c.t];
@@ -195,11 +201,11 @@ return TRAINERS[ch].champion?{bg:"#E8DFC8",icon:"ti-crown",ic:"#B0892B"}:{bg:"#D
 return TILES[ch]||{bg:"#D3D1C7"}}
 function rMap(){const Z=ZONES[S.zone];
 let grid=`<p style="margin:0 0 6px;font-size:14px;font-weight:500"><i class="ti ti-map-pin" aria-hidden="true"></i> ${Z.name}</p>
-<div style="display:grid;grid-template-columns:repeat(${Z.map[0].length},1fr);gap:2px;background:var(--color-background-secondary);padding:6px;border-radius:var(--border-radius-md)">`;
+<div class="isowrap${S.iso?" iso":""}"><div class="tilegrid" style="display:grid;grid-template-columns:repeat(${Z.map[0].length},1fr);gap:2px;background:var(--color-background-secondary);padding:6px;border-radius:var(--border-radius-md)">`;
 Z.map.forEach((row,y)=>row.forEach((ch,x)=>{const t=tileInfo(ch);const here=x===S.px&&y===S.py;
 const inner=here?`<span class="pc"><i class="ti ti-user" aria-hidden="true" style="font-size:13px;color:#26215C"></i></span>`:t.icon?`<i class="ti ${t.icon}" aria-hidden="true" style="font-size:11px;color:${t.ic}"></i>`:"";
 const v="GBMT".includes(ch)&&!here?`;filter:brightness(${(.975+((x*7+y*13)%3)*.025).toFixed(3)})`:"";
-grid+=`<div class="tile" data-t="${ch}" style="background-color:${here?"#CECBF6":t.bg}${v}">${inner}</div>`}));grid+="</div>";
+grid+=`<div class="tile" data-t="${ch}" style="background-color:${here?"#CECBF6":t.bg}${v}">${inner}</div>`}));grid+="</div></div>";
 G.appendChild(el(`${grid}
 <div style="display:flex;gap:1.5rem;align-items:flex-start;margin-top:1rem;flex-wrap:wrap">
 <div style="display:grid;grid-template-columns:repeat(3,44px);gap:4px">
@@ -215,7 +221,7 @@ ${i>0?`<button style="padding:4px 8px;font-size:12px" onclick="lead(${i})" aria-
 </div></div>
 <p style="font-size:14px;margin-top:.75rem;min-height:20px" id="msg">${S.msg||""}</p>
 <p style="font-size:12px;color:var(--color-text-tertiary);margin:0 0 8px">Flechas o botones para moverte. Las casillas violetas con pin son salidas hacia otras zonas. Corazón: curación. Huevo: criadero. Herramientas: taller. Brújula: expediciones. Caja: base de criaturas. El agua y las rocas requieren montura (se venden en la tienda de Ciudad Terral).</p>
-<div class="row" style="flex-wrap:wrap"><button onclick="toggleSnd()" aria-label="${S.snd?"Silenciar":"Activar sonido"}"><i class="ti ${S.snd?"ti-volume":"ti-volume-off"}" aria-hidden="true"></i></button><button onclick="openDex()"><i class="ti ti-list-details" aria-hidden="true"></i> Criaturas ${Object.keys(S.dex).length}/${Object.keys(SPECIES).length}</button><button onclick="openFed()"><i class="ti ti-world" aria-hidden="true"></i> Federación</button><button onclick="saveGame()"><i class="ti ti-download" aria-hidden="true"></i> Guardar partida</button><input id="savecode" readonly placeholder="El código aparece acá" style="flex:1;min-width:180px;font-size:12px"/></div>`))}
+<div class="row" style="flex-wrap:wrap"><button onclick="toggleSnd()" aria-label="${S.snd?"Silenciar":"Activar sonido"}"><i class="ti ${S.snd?"ti-volume":"ti-volume-off"}" aria-hidden="true"></i></button><button onclick="toggleIso()" aria-label="${S.iso?"Vista 2D":"Vista 3D"}"><i class="ti ${S.iso?"ti-cube":"ti-square"}" aria-hidden="true"></i></button><button onclick="openDex()"><i class="ti ti-list-details" aria-hidden="true"></i> Criaturas ${Object.keys(S.dex).length}/${Object.keys(SPECIES).length}</button><button onclick="openFed()"><i class="ti ti-world" aria-hidden="true"></i> Federación</button><button onclick="saveGame()"><i class="ti ti-download" aria-hidden="true"></i> Guardar partida</button><input id="savecode" readonly placeholder="El código aparece acá" style="flex:1;min-width:180px;font-size:12px"/></div>`))}
 window.lead=i=>{const c=S.team.splice(i,1)[0];S.team.unshift(c);S.msg=`${c.name} ahora lidera el equipo.`;render()};
 window.potion=(i,k)=>{if(S.items[k]<1)return;S.items[k]--;const c=S.team[i];c.hp=Math.min(c.maxhp,c.hp+(k==="p"?25:60));S.msg=`${c.name} recuperó PS.`;sfx("heal");render()};
 window.mv=(dx,dy)=>{if(S.screen!=="map")return;const Z=ZONES[S.zone];const nx=S.px+dx,ny=S.py+dy;const ch=(Z.map[ny]||[])[nx];if(!ch)return;
@@ -725,7 +731,7 @@ S.battle=null;S.screen="map";render()};
 /* ============================================================
    Guardado y carga
    ============================================================ */
-function buildSaveCode(){const d={zone:S.zone,px:S.px,py:S.py,team:S.team,box:S.box,balls:S.balls,items:S.items,coins:S.coins,mats:S.mats,bld:S.bld,steps:S.steps,exp:S.exp,beaten:S.beaten,dex:S.dex,egg:S.egg,mounts:S.mounts,snd:S.snd,trade:S.tradeOut};
+function buildSaveCode(){const d={zone:S.zone,px:S.px,py:S.py,team:S.team,box:S.box,balls:S.balls,items:S.items,coins:S.coins,mats:S.mats,bld:S.bld,steps:S.steps,exp:S.exp,beaten:S.beaten,dex:S.dex,egg:S.egg,mounts:S.mounts,snd:S.snd,iso:S.iso,trade:S.tradeOut};
 return btoa(unescape(encodeURIComponent(JSON.stringify(d))))}
 window.saveGame=()=>{const code=buildSaveCode();const inp=document.getElementById("savecode");inp.value=code;inp.select();
 let msg="Código generado. Copialo y guardalo en un lugar seguro.";
@@ -763,6 +769,7 @@ S.dex={};Object.keys(SPECIES).forEach(k=>{if(d.dex&&d.dex[k])S.dex[k]=true});
 S.team.concat(S.box).forEach(c=>reg(c.name));
 S.mounts=Object.fromEntries(MOUNT_KEYS.map(k=>[k,!!(d.mounts&&d.mounts[k]===true)]));
 S.snd=d.snd!==false;
+S.iso=d.iso!==false;
 S.tradeOut=null;
 if(d.trade&&d.trade.c){const tc=cleanCreature(d.trade.c);
 if(tc)S.tradeOut={c:tc,wants:(Array.isArray(d.trade.wants)?d.trade.wants.filter(n=>SPECIES[n]):[]).slice(0,3),
