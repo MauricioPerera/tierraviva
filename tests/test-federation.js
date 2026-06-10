@@ -44,7 +44,23 @@ const remote = { Flarito: { t: "fuego" } }; // mundo remoto que solo conoce a Fl
 const c = A.fedCompat(remote);
 ok(c.have.join() === "Flarito" && c.missing.join() === "Sombrux", "fedCompat separa criaturas existentes y faltantes");
 
-// 4. Pantalla: abre, renderiza sin red y rechaza URLs inválidas
+// 4. Versionado tolerante y directorio
+ok(A.VERSION === parsed.version, "VERSION del motor = version del contrato");
+ok(A.fedVerRel(A.VERSION) === "same" && A.fedVerRel(A.VERSION - 1) === "older" &&
+   A.fedVerRel(A.VERSION + 1) === "newer" && A.fedVerRel("alpha") === "unknown", "fedVerRel clasifica versiones");
+d = clone();
+d.federation.directory = "http://inseguro.com/worlds.json";
+ok(hasError(d), "directorio sin https rechazado");
+d = clone();
+d.version = "alpha";
+ok(lintGame(d).some(f => f.level === "error" && f.rule === "federation-valid"), "version no numérica rechazada");
+const worlds = JSON.parse(fs.readFileSync(path.join(root, "worlds.json"), "utf8"));
+ok(Array.isArray(worlds.directory) && worlds.directory.every(e =>
+  typeof e.id === "string" && /^[a-z0-9][a-z0-9-]*$/.test(e.id) &&
+  typeof e.n === "string" && /^https:\/\//.test(e.url)), "worlds.json con forma válida");
+ok(worlds.directory.some(e => e.id === "terravia-prime"), "el directorio semilla incluye al mundo origen");
+
+// 5. Pantalla: abre, renderiza sin red y rechaza URLs inválidas
 w.openFed();
 ok(S.screen === "fed", "openFed abre la pantalla");
 w.document.getElementById = () => ({ value: "no-es-una-url", innerHTML: "", appendChild() {}, select() {} });

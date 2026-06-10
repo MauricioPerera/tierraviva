@@ -282,6 +282,10 @@ function lintGame(d) {
   const fed = d.federation || {};
   if (typeof fed.worldId !== 'string' || !/^[a-z0-9][a-z0-9-]*$/.test(fed.worldId))
     add('error', 'federation-valid', 'federation.worldId requerido (slug minúsculas/números/guiones)');
+  if (fed.directory != null && (typeof fed.directory !== 'string' || !/^https:\/\/.+/.test(fed.directory)))
+    add('error', 'federation-valid', 'federation.directory debe ser una URL https');
+  if (typeof d.version !== 'number' || !(d.version >= 1))
+    add('error', 'federation-valid', 'version debe ser un número ≥ 1 (versión del esquema del contrato)');
   for (const [id, p] of Object.entries(fed.peers || {})) {
     if (!p || !p.n) add('error', 'federation-valid', 'peer ' + id + ' sin nombre (n)');
     if (!p || typeof p.url !== 'string' || !/^https:\/\/.+/.test(p.url))

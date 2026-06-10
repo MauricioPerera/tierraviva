@@ -21,6 +21,10 @@ Especificación del contrato de contenido para humanos y agentes de IA. **`GAME.
 - Escalares: números, `true`/`false`, strings (comillas opcionales salvo que empiecen con `{`/`[` o sean `#hex` — convención: los colores van entre comillas).
 - Claves con caracteres especiales (`13,4`, `.`) válidas en mapas de bloque.
 
+## Versionado del esquema
+
+`version` (número ≥ 1) declara la versión del **esquema** del contrato. Política: los cambios son **aditivos** — un token o regla nueva no debe romper contratos anteriores; `version` se incrementa cuando se agrega algo obligatorio. Los clientes validan mundos remotos con tolerancia: si la versión remota difiere de la propia, los errores de lint se muestran como observaciones informativas y **no bloquean el viaje** (el mundo destino corre su propio motor); solo se bloquea ante errores de un contrato de la misma versión.
+
 ## Tokens
 
 Todos los tokens listados son **obligatorios** salvo que se indique lo contrario. Los nombres visibles van en español rioplatense.
@@ -90,7 +94,9 @@ Límites de balance: `p` ∈ [`powerMin`, `powerMax`] (hoy 30–60); `sc` ∈ (0
 `{ start: [zona, x, y], respawn: [zona, x, y], balls, potions, supers }` — posiciones en casilla caminable; inventario ≥ 0.
 
 ### `federation`
-`{ worldId, peers: { id: { n, url } } }` — `worldId` slug (`a-z0-9-`); `peers` con URL `https://` que sirva el juego y su `GAME.md`.
+`{ worldId, directory?, peers: { id: { n, url } } }` — `worldId` slug (`a-z0-9-`); `peers` con URL `https://` que sirva el juego y su `GAME.md`; `directory` (opcional) apunta a un `worlds.json` con el directorio de mundos conocidos (`{ "directory": [ { id, n, url } ] }`, curado por PR).
+
+Convenciones de federación: **la identidad real de un mundo es su URL** (el cliente avisa si el `worldId` remoto no coincide con cómo lo tenés listado); la clave de cada peer debe ser el `worldId` del mundo destino; listar un peer es respaldarlo — tu lista es tu allowlist moderada, y "defederar" es borrar la línea. El repo debe incluir `.nojekyll` para que Pages sirva `GAME.md` crudo.
 
 ### `zones`
 ```yaml

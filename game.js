@@ -6,6 +6,7 @@
    juego degrada con gracia a este snapshot. La lógica vive en el motor.
    ============================================================ */
 const GD=(typeof window!=="undefined"&&window.GAME)||{};
+const VERSION=GD.VERSION||1;
 const TYPES=GD.TYPES||{fuego:{c:"#D85A30",bg:"#FAECE7",icon:"ti-flame"},agua:{c:"#185FA5",bg:"#E6F1FB",icon:"ti-droplet"},planta:{c:"#3B6D11",bg:"#EAF3DE",icon:"ti-leaf"},normal:{c:"#5F5E5A",bg:"#F1EFE8",icon:"ti-paw"}};
 const EFF=GD.EFF||{fuego:{planta:2,agua:.5,fuego:.5},agua:{fuego:2,planta:.5,agua:.5},planta:{agua:2,fuego:.5,planta:.5},normal:{}};
 const STATUS=GD.STATUS||{burn:{tag:"QUE",c:"#D85A30",bg:"#FAECE7",hit:"¡{n} sufre quemaduras!"},par:{tag:"PAR",c:"#8A6A1F",bg:"#FBF3D0",hit:"¡{n} quedó paralizado!"}};
@@ -57,7 +58,7 @@ const SFX=GD.SFX||{encounter:{freq:392,dur:.12},hit:{freq:220,dur:.08,type:"sawt
 const MUSIC=GD.MUSIC||{map:{tempo:104,wave:"triangle",vol:.025,loop:true,notes:[60,0,64,0,67,0,64,0,69,0,67,0,64,62,60,0,62,0,65,0,69,0,65,0,67,0,64,0,62,0,60,0]},battle:{tempo:148,wave:"square",vol:.02,loop:true,notes:[57,57,0,60,57,0,62,63,62,60,57,0,55,0,57,0]}};
 const BREED=GD.BREED||{eggSteps:24,hatchLvl:5,hpDiv:40,atkDiv:20};
 const PLAYER=GD.PLAYER||{start:["pueblo",6,4],respawn:["pueblo",3,3],balls:8,potions:3,supers:1};
-const FED=GD.FED||{worldId:"terravia-prime",peers:{}};
+const FED=GD.FED||{worldId:"terravia-prime",directory:"https://mauricioperera.github.io/tierraviva/worlds.json",peers:{}};
 const BAL=GD.BAL||{hpMin:30,hpMax:70,atkMin:8,atkMax:18,budgetMax:110,powerMin:30,powerMax:60,scMax:0.4,lvlMax:20,maxMoves:4,tradeLvlMax:20};
 const ZONES=GD.ZONES||{
 pueblo:{name:"Pueblo Brote",map:["TTTTTTTTTTTTTT","T....h..h....T","T..P.........T","T..C......H..T","T............E","T.h.......h..T","T.....X......T","TTTTTTTTTTTTTT"],warps:{"13,4":["ruta1",1,4]}},
@@ -357,7 +358,7 @@ body=`<p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 6px"
 ${ficha(t.c)}
 <p style="font-size:13px;color:var(--color-text-secondary);margin:8px 0 4px">Pasale este código de oferta a la otra persona:</p>
 <input readonly value="${offerCode()}" onclick="this.select()" style="width:100%;font-size:11px;margin-bottom:6px"/>
-<p style="font-size:12px;color:var(--color-text-tertiary);margin:0 0 4px">¿Querés publicarla en el tablón de tu mundo? Agregá esta entrada a <b>trades.json</b> vía PR (poné tu contacto para recibir el cierre):</p>
+<p style="font-size:12px;color:var(--color-text-tertiary);margin:0 0 4px">¿Querés publicarla en el tablón de tu mundo? Agregá esta entrada a <b>trades.json</b> vía PR. Ojo: el contacto que pongas queda público para siempre en el historial del repo.</p>
 <input readonly value="${esc(JSON.stringify({code:offerCode(),contact:"tu-contacto-acá"}))}" onclick="this.select()" style="width:100%;font-size:11px;margin-bottom:10px"/>
 <p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 4px">Cuando te responda, pegá su código de cierre:</p>
 <div class="row" style="margin-bottom:10px"><input id="trclose" placeholder="Código de cierre" style="flex:1"/><button onclick="trClose()">Cerrar intercambio</button></div>
@@ -444,27 +445,49 @@ G.appendChild(el(`<div class="card">
 <p style="margin:0 0 4px;font-weight:500;font-size:15px"><i class="ti ti-world" aria-hidden="true"></i> Federación de mundos</p>
 <p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 12px">Cada fork de Terravia es un mundo independiente con su propio contrato. Explorá uno para validar su contenido y viajá llevando tu código de guardado. Este mundo: <b>${esc(FED.worldId)}</b>.</p>
 ${Object.keys(FED.peers).length?`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin-bottom:10px">
-${Object.entries(FED.peers).map(([id,p])=>`<button class="mvbtn" onclick="fedExplore('${esc(p.url)}')"><span style="font-weight:500">${esc(p.n)}</span><br><span style="font-size:12px;color:var(--color-text-secondary)">${esc(p.url)}</span></button>`).join("")}
+${Object.entries(FED.peers).map(([id,p])=>`<button class="mvbtn" onclick="fedExplore('${esc(p.url)}','${esc(id)}')"><span style="font-weight:500">${esc(p.n)}</span><br><span style="font-size:12px;color:var(--color-text-secondary)">${esc(p.url)}</span></button>`).join("")}
 </div>`:`<p style="font-size:13px;color:var(--color-text-tertiary);margin:0 0 10px">Este mundo no declara pares todavía (token federation.peers de GAME.md).</p>`}
+${FED.directory?(S.fedDir?`<p style="font-size:13px;font-weight:500;margin:0 0 6px"><i class="ti ti-list-search" aria-hidden="true"></i> Directorio de mundos (${S.fedDir.length}):</p>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin-bottom:10px">
+${S.fedDir.map(e=>`<button class="mvbtn" onclick="fedExplore('${esc(e.url)}','${esc(e.id||"")}')"><span style="font-weight:500">${esc(e.n||e.id||"?")}</span><br><span style="font-size:12px;color:var(--color-text-secondary)">${esc(e.url)}</span></button>`).join("")||`<p style="font-size:13px;color:var(--color-text-tertiary)">El directorio está vacío.</p>`}
+</div>`:`<button style="margin-bottom:10px" onclick="fedDirLoad()" ${S.fedDirBusy?"disabled":""}><i class="ti ti-list-search" aria-hidden="true"></i> ${S.fedDirBusy?"Cargando…":"Cargar directorio de mundos"}</button>`):""}
 <div class="row" style="margin-bottom:10px"><input id="fedurl" placeholder="https://usuario.github.io/su-fork/" style="flex:1"/><button onclick="fedExplore()" ${S.fedBusy?"disabled":""}>${S.fedBusy?"Consultando…":"Explorar"}</button></div>
 ${S.fedErr?`<p style="font-size:13px;color:#E24B4A;margin:0 0 10px">${esc(S.fedErr)}</p>`:""}
-${f?`<div class="card" style="margin-bottom:10px">
+${f?(()=>{const blocked=f.lintErrors>0&&(f.verRel==="same"||f.verRel==="unknown");
+const verTxt=f.verRel==="same"||f.verRel==="unknown"?(f.lintErrors===0?"contrato: válido ✓":`<span style="color:#E24B4A">contrato: ${f.lintErrors} error(es) de lint</span>`):
+f.verRel==="older"?`contrato v${esc(f.version)} — anticuado (el tuyo v${VERSION})${f.lintErrors?` · ${f.lintErrors} observación(es) con tus reglas`:""}`:
+`contrato v${esc(f.version)} — más nuevo que tu cliente (v${VERSION})${f.lintErrors?` · ${f.lintErrors} observación(es)`:""}`;
+return `<div class="card" style="margin-bottom:10px">
 <p style="margin:0 0 4px;font-weight:500">${esc(f.name)} <span style="font-weight:400;color:var(--color-text-secondary)">(${esc(f.worldId)} · v${esc(f.version)})</span></p>
-<p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 6px">${f.species} especies · ${f.zones} zonas · ${f.trainers} entrenadores · contrato: ${f.lintErrors===0?"válido ✓":`<span style="color:#E24B4A">${f.lintErrors} error(es) de lint</span>`}</p>
+${f.idMismatch?`<p style="font-size:13px;color:#B8860B;margin:0 0 6px"><i class="ti ti-alert-triangle" aria-hidden="true"></i> Identidad: este mundo dice ser «${esc(f.worldId)}» pero lo tenés listado como «${esc(f.idMismatch)}». La identidad real es la URL.</p>`:""}
+<p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 6px">${f.species} especies · ${f.zones} zonas · ${f.trainers} entrenadores · ${verTxt}</p>
 <p style="font-size:13px;margin:0 0 8px">Tu equipo allá: ${f.compat.have.length?`✓ ${f.compat.have.join(", ")}`:""}${f.compat.missing.length?` <span style="color:#E24B4A">✗ ${f.compat.missing.join(", ")} (no existen en ese mundo: se descartan al cargar)</span>`:""}${!f.compat.have.length&&!f.compat.missing.length?"sin criaturas aún":""}</p>
-<button onclick="fedTravel()" ${f.lintErrors>0?"disabled":""}><i class="ti ti-plane-departure" aria-hidden="true"></i> Viajar con tu equipo</button>
-${f.lintErrors>0?`<p style="font-size:12px;color:var(--color-text-tertiary);margin:6px 0 0">No se recomienda viajar a un mundo con contrato inválido.</p>`:""}
+<button onclick="fedTravel()" ${blocked?"disabled":""}><i class="ti ti-plane-departure" aria-hidden="true"></i> Viajar con tu equipo</button>
+${blocked?`<p style="font-size:12px;color:var(--color-text-tertiary);margin:6px 0 0">No se recomienda viajar a un mundo con contrato inválido.</p>`:f.verRel==="older"||f.verRel==="newer"?`<p style="font-size:12px;color:var(--color-text-tertiary);margin:6px 0 0">Las versiones difieren: allá corre su propio motor, estas observaciones son informativas.</p>`:""}
+${f.rpeers&&f.rpeers.length?`<p style="font-size:13px;font-weight:500;margin:10px 0 6px"><i class="ti ti-affiliate" aria-hidden="true"></i> Sus pares conocidos:</p>
+<div style="display:flex;flex-wrap:wrap;gap:6px">${f.rpeers.map(([id,p])=>`<button style="padding:3px 10px;font-size:12px" onclick="fedExplore('${esc(p.url)}','${esc(id)}')">${esc(p.n||id)}</button>`).join("")}</div>`:""}
 ${f.board===null?"":f.board.length===0?`<p style="font-size:13px;color:var(--color-text-tertiary);margin:10px 0 0"><i class="ti ti-clipboard-list" aria-hidden="true"></i> Tablón de intercambios: sin ofertas.</p>`:`
 <p style="font-size:13px;font-weight:500;margin:10px 0 6px"><i class="ti ti-clipboard-list" aria-hidden="true"></i> Tablón de intercambios (${f.board.length}):</p>
 ${f.board.map((o,i)=>o.err?`<p style="font-size:12px;color:var(--color-text-tertiary);margin:0 0 6px">· Oferta de ${esc(o.name||"?")} no disponible en tu mundo: ${esc(o.err)}.</p>`:`
 <div class="card" style="margin-bottom:8px">${ficha(o.d.c)}
 <p style="font-size:13px;margin:0 0 6px">Pide: <b>${o.d.wants.length?o.d.wants.join(", "):"cualquier especie"}</b>${o.contact?` · cierre por: ${esc(o.contact)}`:""}</p>
 <button onclick="boardTake(${i})"><i class="ti ti-arrows-exchange" aria-hidden="true"></i> Llevar al puesto de intercambio</button></div>`).join("")}`}
-</div>`:""}
+</div>`})():""}
 <button onclick="closeFed()"><i class="ti ti-arrow-left" aria-hidden="true"></i> Volver al mapa</button></div>`))}
 window.openFed=()=>{S.screen="fed";S.fedInfo=null;S.fedErr=null;S.fedBusy=false;render()};
+window.fedDirLoad=()=>{if(S.fedDirBusy||!FED.directory)return;
+if(typeof fetch!=="function"){S.fedErr="El directorio no está disponible en este entorno.";render();return}
+S.fedDirBusy=true;render();
+fetch(FED.directory).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()})
+.then(j=>{S.fedDir=(Array.isArray(j&&j.directory)?j.directory:[]).slice(0,50).filter(e=>e&&typeof e.url==="string"&&/^https:\/\//.test(e.url));
+S.fedDirBusy=false;render()})
+.catch(e=>{S.fedErr="No se pudo leer el directorio: "+e.message;S.fedDirBusy=false;render()})};
 window.closeFed=()=>{S.screen="map";S.fedInfo=null;S.fedErr=null;render()};
-window.fedExplore=u=>{if(S.fedBusy)return;
+/* La identidad real de un mundo es su URL; worldId es una etiqueta. La validación
+   remota es tolerante por versión: un contrato más viejo/nuevo que el cliente no
+   bloquea el viaje (allá corre SU motor), solo informa. */
+function fedVerRel(v){return typeof v!=="number"?"unknown":v===VERSION?"same":v<VERSION?"older":"newer"}
+window.fedExplore=(u,expectId)=>{if(S.fedBusy)return;
 u=(u||document.getElementById("fedurl").value).trim();
 if(!/^https?:\/\/.+/.test(u)){S.fedErr="Ingresá una URL válida (https://…).";S.fedInfo=null;render();return}
 if(!u.endsWith("/"))u+="/";
@@ -475,7 +498,10 @@ fetch(u+"GAME.md").then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.
 if(!fm)throw new Error("El GAME.md remoto no tiene front-matter");
 const d=window.YamlMin.parseYamlSubset(fm);
 const errs=window.GameLint.lintGame(d).filter(x=>x.level==="error").length;
-S.fedInfo={url:u,name:d.name||"(sin nombre)",worldId:(d.federation||{}).worldId||"?",version:d.version??"?",
+const wid=(d.federation||{}).worldId||"?";
+S.fedInfo={url:u,name:d.name||"(sin nombre)",worldId:wid,version:d.version??"?",verRel:fedVerRel(d.version),
+idMismatch:expectId&&expectId!==wid?expectId:null,
+rpeers:Object.entries((d.federation||{}).peers||{}).slice(0,8).filter(([,p])=>p&&typeof p.url==="string"),
 species:Object.keys(d.species||{}).length,zones:Object.keys(d.zones||{}).length,trainers:Object.keys(d.trainers||{}).length,
 lintErrors:errs,compat:fedCompat(d.species),board:null};
 S.fedBusy=false;render();

@@ -123,7 +123,9 @@ Cada fork de este repo es un **mundo independiente**: su `GAME.md` define criatu
 
 Desde el botón "Federación" del mapa podés explorar cualquier mundo por URL: el cliente descarga su contrato, lo **valida con el lint en el navegador** (el linter es isomorfo), muestra qué ofrece, qué criaturas de tu equipo existen allá, y te deja viajar — abre el mundo destino con tu código de guardado en la URL, listo para cargar. Las especies que el destino no declara se descartan al cargar (saneamiento estándar); las partidas muy grandes viajan copiando el código a mano.
 
-Para sumar tu fork a la federación: publicalo en GitHub Pages, poné tu `worldId` en `GAME.md`, y agregá los mundos que conozcas en `peers` (idealmente, pedile a esos mundos vía PR que te listen de vuelta).
+Para sumar tu fork a la federación: publicalo en GitHub Pages, poné tu `worldId` en `GAME.md`, y agregá los mundos que conozcas en `peers` (idealmente, pedile a esos mundos vía PR que te listen de vuelta). También podés pedir entrar al **directorio de mundos** (`worlds.json` del mundo original, curado por PR), que cualquier jugador puede cargar desde la pantalla Federación; y al explorar un mundo se ven *sus* pares, así que la red se navega transitivamente sin registro central.
+
+Normas de convivencia (lecciones del Fediverse): la **identidad real de un mundo es su URL** — el cliente avisa si un mundo dice ser otro del que tenés listado; **listar un peer es respaldarlo** (tu lista es tu allowlist moderada; defederar = borrar la línea vía PR); y las diferencias de versión de contrato no bloquean el viaje, solo se informan — allá corre su propio motor. Nota sobre el viaje: el saneo de saves al llegar es *laxo* a propósito (recorta, no rechaza); la validación estricta queda para los intercambios, y será obligatoria si algún día hay duelos entre jugadores. Un workflow semanal hace ping a pares y directorio para detectar mundos muertos.
 
 ## Contribuir
 

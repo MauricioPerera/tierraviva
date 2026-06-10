@@ -12,6 +12,7 @@ const { splitFrontMatter, parseYamlSubset } = require('./yaml-min');
 
 function buildGame(d) {
   return {
+    VERSION: d.version,
     TYPES: d.types, EFF: d.effectiveness, STATUS: d.status, MOVES: d.moves,
     SPECIES: d.species, DESCS: d.descriptions, ART: d.art || {}, TRAINERS: d.trainers, SHOP: d.shop, TILES: d.tiles,
     BIOMES: d.biomes, MATERIALS: d.materials, RECIPES: d.recipes,

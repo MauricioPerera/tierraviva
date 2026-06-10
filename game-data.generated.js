@@ -1,6 +1,7 @@
 // AUTO-GENERADO por tools/game-export.js desde GAME.md — NO EDITAR A MANO.
 // Regenerar con:  node tools/game-export.js
 window.GAME = {
+  "VERSION": 1,
   "TYPES": {
     "fuego": {
       "c": "#D85A30",
@@ -1009,6 +1010,7 @@ window.GAME = {
   },
   "FED": {
     "worldId": "terravia-prime",
+    "directory": "https://mauricioperera.github.io/tierraviva/worlds.json",
     "peers": {}
   },
   "BAL": {

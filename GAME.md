@@ -140,6 +140,7 @@ breeding: { eggSteps: 24, hatchLvl: 5, hpDiv: 40, atkDiv: 20 }
 player: { start: [pueblo, 6, 4], respawn: [pueblo, 3, 3], balls: 8, potions: 3, supers: 1 }
 federation:
   worldId: terravia-prime
+  directory: "https://mauricioperera.github.io/tierraviva/worlds.json"
   peers: { }
 zones:
   pueblo:
